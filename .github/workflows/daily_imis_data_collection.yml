@@ -9,6 +9,9 @@ jobs:
   run-scripts:
     runs-on: ubuntu-latest
 
+  permissions:
+  contents: write  # Erlaubt es dem Workflow, Inhalte ins Repository zu schreiben
+
     steps:
     - name: Checkout repository
       uses: actions/checkout@v3
