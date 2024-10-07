@@ -7,9 +7,9 @@ Part 1 - Load static Data:
 In this part, the historical (static) data are loaded. The data are divided into three datasets:
 """
 
-# 1.1) Load Geodata of IMS stations:
-ims_df = pd.read_csv('assets/01_SLF_ims_stations.csv', sep=';', skiprows=0)
-print(ims_df.head())
+# 1.1) Load Geodata of IMIS stations:
+imis_df = pd.read_csv('assets/01_SLF_imis_stations.csv', sep=';', skiprows=0)
+print(imis_df.head())
 
 # 1.2) Load historical data of avalanche accidents:
 acc_df = pd.read_csv('assets/02_SLF_hist_avalanche_accidents.csv', sep=';',skiprows=3)
@@ -26,35 +26,35 @@ In this part, the realtime data are loaded.
 The collection of the data is done by connecting to the respective APIs (in asset folder).
 """
 
-# 2.1) Load daily IMS measurement data (updated every 30 minutes):
-# New data collected every day at 14:00 with 'API_Load_IMS_Daily_Data.py'
-measure_df = pd.read_csv('assets/04_SLF_daily_ims_measurements.csv', sep=';',skiprows=0)
+# 2.1) Load daily IMIS measurement data (updated every 30 minutes):
+# New data collected every day at 14:00 with 'API_Load_IMIS_Daily_Data.py'
+measure_df = pd.read_csv('assets/04_SLF_daily_imis_measurements.csv', sep=';',skiprows=0)
 print(measure_df.head())
 
-# 2.2) Load daily IMS snow data (updated once a day):
-# New data collected every day at 14:00 with 'API_Load_IMS_Daily_Snow'
-snow_df = pd.read_csv('assets/05_SLF_daily_ims_snow.csv', sep=';',skiprows=0)
+# 2.2) Load daily IMIS snow data (updated once a day):
+# New data collected every day at 14:00 with 'API_Load_IMIS_Daily_Snow'
+snow_df = pd.read_csv('assets/05_SLF_daily_imis_snow.csv', sep=';',skiprows=0)
 print(snow_df.head())
 
 """
 ------------------------------------------------------------------------------------------------------------------------
-Part 3 - Visualize IMS stations and accident locations on a map with Plotly:
-In this part, a geo map is created to visualize the the IMS stations
+Part 3 - Visualize IMIS stations and accident locations on a map with Plotly:
+In this part, a geo map is created to visualize the the IMIS stations
 and the locations of the avalanche accidents.
 """
 
-def ims_accident_map(ims_df, acc_df):
-    latitudes_ims = ims_df['lat']
+def imis_accident_map(imis_df, acc_df):
+    latitudes_imis = imis_df['lat']
     latitudes_acc = acc_df['start.zone.coordinates.latitude']
-    longitudes_ims = ims_df['lon']
+    longitudes_imis = imis_df['lon']
     longitudes_acc = acc_df['start.zone.coordinates.longitude']
-    station_names = ims_df['label']
+    station_names = imis_df['label']
     accident_names = acc_df['municipality']
 
-    # Plot IMS locations:
+    # Plot IMIS locations:
     fig = go.Figure(go.Scattermapbox(
-        lat=latitudes_ims,
-        lon=longitudes_ims,
+        lat=latitudes_imis,
+        lon=longitudes_imis,
         mode='markers',
         marker=go.scattermapbox.Marker(
             size=9,
@@ -76,13 +76,13 @@ def ims_accident_map(ims_df, acc_df):
     fig.update_layout(
         mapbox_style="open-street-map",
         mapbox_zoom=7,  # Adjust zoom level depending on your data
-        mapbox_center={"lat": latitudes_ims.mean(), "lon": longitudes_ims.mean()},  # Center map on the average location
+        mapbox_center={"lat": latitudes_imis.mean(), "lon": longitudes_imis.mean()},  # Center map on the average location
         margin={"r":0,"t":0,"l":0,"b":0}  # Remove margins around the map
     )
 
-    fig.write_html('ims_stations_and_accidents.html', auto_open=True)
+    fig.write_html('imis_stations_and_accidents.html', auto_open=True)
 
-#ims_accident_map(ims_df, acc_df)
+#imis_accident_map(imis_df, acc_df)
 
 """
 ------------------------------------------------------------------------------------------------------------------------
