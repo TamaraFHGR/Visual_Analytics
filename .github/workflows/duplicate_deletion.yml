@@ -1,0 +1,44 @@
+name: Run Duplicate Deletion
+
+on:
+  schedule:
+    - cron: '0 17 * * *'  # Daily at 16:00 UTC (19:00 local time)
+  workflow_dispatch:  # allow manual workflow run
+
+jobs:
+  run-scripts:
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: write  # allow workflow to write to repository
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v3
+
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.12'
+
+    - name: Install dependencies
+      working-directory: assets/API/
+      run: |
+        pip install -r requirements.txt
+
+    - name: Run Duplicate Deletion
+      working-directory: assets/API/
+      run: |
+        python Delete_Duplicates.py
+
+    # Commit and push changes to repository
+    - name: Commit and push changes
+      run: |
+        git config --global user.name 'github-actions'
+        git config --global user.email 'github-actions@github.com'
+        git add assets/API/daily/04_SLF_daily_imis_measurements_clean.csv
+        git add assets/API/daily/05_SLF_daily_imis_snow_clean.csv
+        git commit -m "Update clean CSV files from duplicate deletion"
+        git push
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
