@@ -1,6 +1,6 @@
 name: Run Python Scripts Daily - API data collection SLF
 
-# Dieser Workflow läuft täglich um 14:00 UTC
+# Dieser Workflow läuft täglich um 15:00 UTC
 on:
   schedule:
     - cron: '0 15 * * *'  # Täglich um 15:00 Uhr UTC (17:00 lokale Zeit)
