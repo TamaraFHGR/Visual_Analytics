@@ -2,15 +2,15 @@ name: Run API Data Collection with Python Scripts Daily
 
 on:
   schedule:
-    - cron: '0 16 * * *'  # Täglich um 16:00 Uhr UTC (18:00 lokale Zeit)
-  workflow_dispatch:  # Ermöglicht den manuellen Start
+    - cron: '0 16 * * *'  # Daily at 16:00 UTC (18:00 local time)
+  workflow_dispatch:  # allow manual workflow run
 
 jobs:
   run-scripts:
     runs-on: ubuntu-latest
 
     permissions:
-      contents: write  # Erlaubt es dem Workflow, Inhalte ins Repository zu schreiben
+      contents: write  # allow workflow to write to repository
 
     steps:
     - name: Checkout repository
@@ -36,14 +36,14 @@ jobs:
       run: |
         python API_Load_IMIS_Daily_Snow.py
 
-    # Füge die CSV-Dateien zum Commit hinzu und pushe sie
+    # Commit and push changes to repository
     - name: Commit and push changes
       run: |
         git config --global user.name 'github-actions'
         git config --global user.email 'github-actions@github.com'
-        git add assets/API/daily/xx_SLF_daily_imis_measurements.csv
-        git add assets/API/daily/yy_SLF_daily_imis_snow.csv
+        git add assets/API/daily/04_SLF_daily_imis_measurements.csv
+        git add assets/API/daily/05_SLF_daily_imis_snow.csv
         git commit -m "Update CSV files from workflow run"
         git push
       env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}  # Nutze GitHub Actions Token für den Push
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
