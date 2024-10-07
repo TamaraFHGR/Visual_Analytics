@@ -32,3 +32,15 @@ jobs:
       working-directory: assets/API/
       run: |
         python API_Load_IMIS_Daily_Snow.py
+
+    # Füge die CSV-Dateien zum Commit hinzu und pushe sie
+    - name: Commit and push changes
+      run: |
+        git config --global user.name 'github-actions'
+        git config --global user.email 'github-actions@github.com'
+        git add assets/API/daily/xx_SLF_daily_imis_measurements.csv
+        git add assets/API/daily/yy_SLF_daily_imis_snow.csv
+        git commit -m "Update CSV files from workflow run"
+        git push
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}  # Nutze GitHub Actions Token für den Push
