@@ -19,6 +19,7 @@ jobs:
         python-version: '3.12'  # zu verwendende Python-Version
 
     - name: Install dependencies
+      working-directory: assets/API/
       run: |
         pip install -r requirements.txt
 
