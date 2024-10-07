@@ -1,0 +1,31 @@
+name: Run Python Scripts Daily - API data collection SLF
+
+# Dieser Workflow läuft täglich um 14:00 UTC
+on:
+  schedule:
+    - cron: '0 14 * * *'  # Täglich um 14:00 Uhr UTC
+
+jobs:
+  run-script:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v3
+
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.12'  # zu verwendende Python-Version
+
+    - name: Install dependencies
+      run: |
+        pip install -r requirements.txt
+
+    - name: Collect daily IMIS measurement data from SLF API
+      run: |
+        python API_Load_IMIS_Daily_Data.py
+
+    - name: Collect daily snow data from SLF API
+      run: |
+        python API_Load_IMIS_Daily_Snow.py
