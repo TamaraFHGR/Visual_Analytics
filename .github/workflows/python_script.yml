@@ -23,9 +23,11 @@ jobs:
         pip install -r requirements.txt
 
     - name: Collect daily IMIS measurement data from SLF API
+      working-directory: assets/API/
       run: |
         python API_Load_IMIS_Daily_Data.py
 
     - name: Collect daily snow data from SLF API
+      working-directory: assets/API/
       run: |
         python API_Load_IMIS_Daily_Snow.py
