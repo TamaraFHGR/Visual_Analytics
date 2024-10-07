@@ -36,6 +36,11 @@ jobs:
       run: |
         python API_Load_IMIS_Daily_Snow.py
 
+    - name: Run Duplicate Deletion
+      working-directory: assets/API/
+      run: |
+        python Delete_Duplicates.py
+
     # Commit and push changes to repository
     - name: Commit and push changes
       run: |
