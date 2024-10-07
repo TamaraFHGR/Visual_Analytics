@@ -1,0 +1,34 @@
+name: Run API Data Collection with Python Scripts Daily
+
+on:
+  schedule:
+    - cron: '15 16 * * *'  # Täglich um 16:15 Uhr UTC (18:15 lokale Zeit)
+  workflow_dispatch:  # Ermöglicht den manuellen Start
+
+jobs:
+  run-scripts:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v3
+
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.12'
+
+    - name: Install dependencies
+      working-directory: assets/API/
+      run: |
+        pip install -r requirements.txt
+
+    - name: Run Global Data Collection
+      working-directory: assets/API/
+      run: |
+        python API_Load_IMIS_Daily_Data.py
+
+    - name: Run Snow Data Collection
+      working-directory: assets/API/
+      run: |
+        python API_Load_IMIS_Daily_Snow.py
