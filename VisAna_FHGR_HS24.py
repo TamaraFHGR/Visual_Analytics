@@ -28,12 +28,12 @@ The collection of the data is done by connecting to the respective APIs (in asse
 
 # 2.1) Load daily IMIS measurement data (updated every 30 minutes):
 # New data collected every day at 14:00 with 'API_Load_IMIS_Daily_Data.py'
-measure_df = pd.read_csv('assets/04_SLF_daily_imis_measurements.csv', sep=';',skiprows=0)
+measure_df = pd.read_csv('assets/API/daily/04_SLF_daily_imis_measurements_clean.csv', sep=';',skiprows=0)
 print(measure_df.head())
 
 # 2.2) Load daily IMIS snow data (updated once a day):
 # New data collected every day at 14:00 with 'API_Load_IMIS_Daily_Snow'
-snow_df = pd.read_csv('assets/05_SLF_daily_imis_snow.csv', sep=';',skiprows=0)
+snow_df = pd.read_csv('assets/API/daily/05_SLF_daily_imis_snow_clean.csv', sep=';',skiprows=0)
 print(snow_df.head())
 
 """
@@ -44,6 +44,8 @@ and the locations of the avalanche accidents.
 """
 
 def imis_accident_map(imis_df, acc_df):
+    # filter data on 2022 - 2023:
+    acc_df = acc_df[(acc_df['hydrological.year'] == '2021/22') | (acc_df['hydrological.year'] == '2022/23')]
     latitudes_imis = imis_df['lat']
     latitudes_acc = acc_df['start.zone.coordinates.latitude']
     longitudes_imis = imis_df['lon']
@@ -68,7 +70,7 @@ def imis_accident_map(imis_df, acc_df):
         lon=longitudes_acc,
         mode='markers',
         marker=go.scattermapbox.Marker(
-            size=4,
+            size=5,
             color='red'),
         text=accident_names)
     )
@@ -82,7 +84,7 @@ def imis_accident_map(imis_df, acc_df):
 
     fig.write_html('imis_stations_and_accidents.html', auto_open=True)
 
-#imis_accident_map(imis_df, acc_df)
+imis_accident_map(imis_df, acc_df)
 
 """
 ------------------------------------------------------------------------------------------------------------------------
@@ -111,5 +113,5 @@ def snow_data_plot(snow_df):
 
     fig.write_html('snow_height_new_snowfall.html', auto_open=True)
 
-snow_data_plot(hist_snow_df)
+#snow_data_plot(hist_snow_df)
 
