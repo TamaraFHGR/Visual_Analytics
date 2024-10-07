@@ -10,40 +10,40 @@ jobs:
     runs-on: ubuntu-latest
 
     permissions:
-    contents: write  # Erlaubt es dem Workflow, Inhalte ins Repository zu schreiben
+      contents: write  # Erlaubt es dem Workflow, Inhalte ins Repository zu schreiben
 
-  steps:
-  - name: Checkout repository
-    uses: actions/checkout@v3
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v3
 
-  - name: Set up Python
-    uses: actions/setup-python@v4
-    with:
-      python-version: '3.12'
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.12'
 
-  - name: Install dependencies
-    working-directory: assets/API/
-    run: |
-      pip install -r requirements.txt
+    - name: Install dependencies
+      working-directory: assets/API/
+      run: |
+        pip install -r requirements.txt
 
-  - name: Run Global Data Collection
-    working-directory: assets/API/
-    run: |
-      python API_Load_IMIS_Daily_Data.py
+    - name: Run Global Data Collection
+      working-directory: assets/API/
+      run: |
+        python API_Load_IMIS_Daily_Data.py
 
-  - name: Run Snow Data Collection
-    working-directory: assets/API/
-    run: |
-      python API_Load_IMIS_Daily_Snow.py
+    - name: Run Snow Data Collection
+      working-directory: assets/API/
+      run: |
+        python API_Load_IMIS_Daily_Snow.py
 
-  # Füge die CSV-Dateien zum Commit hinzu und pushe sie
-  - name: Commit and push changes
-    run: |
-      git config --global user.name 'github-actions'
-      git config --global user.email 'github-actions@github.com'
-      git add assets/API/daily/xx_SLF_daily_imis_measurements.csv
-      git add assets/API/daily/yy_SLF_daily_imis_snow.csv
-      git commit -m "Update CSV files from workflow run"
-      git push
-    env:
-      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}  # Nutze GitHub Actions Token für den Push
+    # Füge die CSV-Dateien zum Commit hinzu und pushe sie
+    - name: Commit and push changes
+      run: |
+        git config --global user.name 'github-actions'
+        git config --global user.email 'github-actions@github.com'
+        git add assets/API/daily/xx_SLF_daily_imis_measurements.csv
+        git add assets/API/daily/yy_SLF_daily_imis_snow.csv
+        git commit -m "Update CSV files from workflow run"
+        git push
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}  # Nutze GitHub Actions Token für den Push
