@@ -1,44 +1,53 @@
 import pandas as pd
 import plotly.graph_objs as go
+import gdown
 
 """
 ------------------------------------------------------------------------------------------------------------------------
 Part 1 - Load static Data:
-In this part, the historical (static) data are loaded. The data are divided into three datasets:
+In this part, the historical (static) data are loaded from CSV files.
+The data are divided into three datasets:
 """
 
 # 1.1) Load Geodata of IMIS stations:
 imis_df = pd.read_csv('assets/00_SLF_imis_stations.csv', sep=';', skiprows=0)
-print(imis_df.head())
+#print(imis_df.head())
 
 # 1.2) Load historical data of avalanche accidents:
 acc_df = pd.read_csv('assets/01_SLF_hist_avalanche_accidents.csv', sep=';',skiprows=3)
-print(acc_df.head())
+#print(acc_df.head())
 
 # 1.3) Load historical IMIS measurement data:
+# Dataset 240MB and to large for GitHub. Download from Google Drive instead:
+url = 'https://drive.google.com/uc?id=1LwGMAvYekeEeD2f37E3YyMidP-nxlyzp'
+output = 'assets/02_SLF_hist_daily_measurements.csv'
+gdown.download(url, output, quiet=False)
+
 hist_measure_df = pd.read_csv('assets/02_SLF_hist_daily_measurements.csv', sep=';',skiprows=0)
 print(hist_measure_df.head())
 
 # 1.4) Load historical data of snow height (HS) and new snowfall (HN_1D):
 hist_snow_df = pd.read_csv('assets/03_SLF_hist_daily_snow.csv', sep=';',skiprows=0)
-print(hist_snow_df.head())
+#print(hist_snow_df.head())
 
 """
 ------------------------------------------------------------------------------------------------------------------------
 Part 2 - Update live Data:
 In this part, the realtime data are loaded.
-The collection of the data is done by connecting to the respective APIs (in asset folder).
+The collection of the data is done by connecting to the respective APIs (see scripts in asset folder).
 """
 
-# 2.1) Load daily IMIS measurement data (updated every 30 minutes):
-# New data collected every day at 14:00 with 'API_Load_IMIS_Daily_Data.py'
+# 2.1) Load daily IMIS measurement data (updated every 30 minutes) and aggregate to daily data:
+# New data collected every day at 16:00 UTC with '01_API_Load_IMIS_Daily_Data.py'
 measure_df = pd.read_csv('assets/API/daily/04_SLF_daily_imis_measurements_daily.csv', sep=';',skiprows=0)
-print(measure_df.head())
+#print(measure_df.head())
 
 # 2.2) Load daily IMIS snow data (updated once a day):
-# New data collected every day at 14:00 with 'API_Load_IMIS_Daily_Snow'
+# New data collected every day at 16:00 UTC with '02_API_Load_IMIS_Daily_Snow'
 snow_df = pd.read_csv('assets/API/daily/05_SLF_daily_imis_snow_clean.csv', sep=';',skiprows=0)
-print(snow_df.head())
+#print(snow_df.head())
+
+# Data cleaning is done in the scripts '03_Delete_Duplicates.py' and '04_Aggregate_to_daily_data.py'
 
 """
 ------------------------------------------------------------------------------------------------------------------------
