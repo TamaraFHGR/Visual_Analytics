@@ -1,0 +1,43 @@
+name: Run Aggregation to daily data
+
+on:
+  schedule:
+    - cron: '30 17 * * *'  # Daily at 17:30 UTC (19:30 local time)
+  workflow_dispatch:  # allow manual workflow run
+
+jobs:
+  run-scripts:
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: write  # allow workflow to write to repository
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v3
+
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.12'
+
+    - name: Install dependencies
+      working-directory: assets/API/
+      run: |
+        pip install -r requirements.txt
+
+    - name: Run Duplicate Deletion
+      working-directory: assets/API/
+      run: |
+        python 04_Aggregate_to_daily_data.py
+
+    # Commit and push changes to repository
+    - name: Commit and push changes
+      run: |
+        git config --global user.name 'github-actions'
+        git config --global user.email 'github-actions@github.com'
+        git add assets/API/daily/04_SLF_daily_imis_measurements_daily.csv
+        git commit -m "Update daily aggregated CSV files for imis measurements"
+        git push  
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
