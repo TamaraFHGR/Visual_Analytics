@@ -29,12 +29,12 @@ jobs:
     - name: Run Global Data Collection
       working-directory: assets/API/
       run: |
-        python API_Load_IMIS_Daily_Data.py
+        python 01_API_Load_IMIS_Daily_Data.py
 
     - name: Run Snow Data Collection
       working-directory: assets/API/
       run: |
-        python API_Load_IMIS_Daily_Snow.py
+        python 02_API_Load_IMIS_Daily_Snow.py
 
     # Commit and push changes to repository
     - name: Commit and push changes
