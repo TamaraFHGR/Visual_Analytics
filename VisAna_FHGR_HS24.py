@@ -15,7 +15,11 @@ print(imis_df.head())
 acc_df = pd.read_csv('assets/01_SLF_hist_avalanche_accidents.csv', sep=';',skiprows=3)
 print(acc_df.head())
 
-# 1.3) Load historical data of snow height (HS) and new snowfall (HN_1D):
+# 1.3) Load historical IMIS measurement data:
+hist_measure_df = pd.read_csv('assets/02_SLF_hist_daily_measurements.csv', sep=';',skiprows=0)
+print(hist_measure_df.head())
+
+# 1.4) Load historical data of snow height (HS) and new snowfall (HN_1D):
 hist_snow_df = pd.read_csv('assets/03_SLF_hist_daily_snow.csv', sep=';',skiprows=0)
 print(hist_snow_df.head())
 
