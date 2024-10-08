@@ -2,7 +2,7 @@ name: Run Duplicate Deletion
 
 on:
   schedule:
-    - cron: '0 17 * * *'  # Daily at 16:00 UTC (19:00 local time)
+    - cron: '0 17 * * *'  # Daily at 17:00 UTC (19:00 local time)
   workflow_dispatch:  # allow manual workflow run
 
 jobs:
@@ -29,7 +29,7 @@ jobs:
     - name: Run Duplicate Deletion
       working-directory: assets/API/
       run: |
-        python Delete_Duplicates.py
+        python 03_Delete_Duplicates.py
 
     # Commit and push changes to repository
     - name: Commit and push changes
