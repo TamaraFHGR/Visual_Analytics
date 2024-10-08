@@ -8,11 +8,11 @@ In this part, the historical (static) data are loaded. The data are divided into
 """
 
 # 1.1) Load Geodata of IMIS stations:
-imis_df = pd.read_csv('assets/01_SLF_imis_stations.csv', sep=';', skiprows=0)
+imis_df = pd.read_csv('assets/00_SLF_imis_stations.csv', sep=';', skiprows=0)
 print(imis_df.head())
 
 # 1.2) Load historical data of avalanche accidents:
-acc_df = pd.read_csv('assets/02_SLF_hist_avalanche_accidents.csv', sep=';',skiprows=3)
+acc_df = pd.read_csv('assets/01_SLF_hist_avalanche_accidents.csv', sep=';',skiprows=3)
 print(acc_df.head())
 
 # 1.3) Load historical data of snow height (HS) and new snowfall (HN_1D):
@@ -28,7 +28,7 @@ The collection of the data is done by connecting to the respective APIs (in asse
 
 # 2.1) Load daily IMIS measurement data (updated every 30 minutes):
 # New data collected every day at 14:00 with 'API_Load_IMIS_Daily_Data.py'
-measure_df = pd.read_csv('assets/API/daily/04_SLF_daily_imis_measurements_clean.csv', sep=';',skiprows=0)
+measure_df = pd.read_csv('assets/API/daily/04_SLF_daily_imis_measurements_daily.csv', sep=';',skiprows=0)
 print(measure_df.head())
 
 # 2.2) Load daily IMIS snow data (updated once a day):
@@ -84,7 +84,7 @@ def imis_accident_map(imis_df, acc_df):
 
     fig.write_html('imis_stations_and_accidents.html', auto_open=True)
 
-imis_accident_map(imis_df, acc_df)
+#imis_accident_map(imis_df, acc_df)
 
 """
 ------------------------------------------------------------------------------------------------------------------------
