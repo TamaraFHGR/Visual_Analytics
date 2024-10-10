@@ -18,10 +18,10 @@ acc_df = pd.read_csv('assets/01_SLF_hist_avalanche_accidents.csv', sep=';',skipr
 print(acc_df.head())
 
 # 1.3) Load historical IMIS wind and temperature data:
-# Dataset 240MB and to large for GitHub. Download from Google Drive instead:
-# url = 'https://drive.google.com/uc?id=1LwGMAvYekeEeD2f37E3YyMidP-nxlyzp'
-# output = 'assets/02_SLF_hist_daily_measurements.csv'
-#gdown.download(url, output, quiet=False)
+# Dataset >100MB and too large for GitHub. Download from Google Drive instead:
+url = 'https://drive.google.com/uc?id=1LwGMAvYekeEeD2f37E3YyMidP-nxlyzp'
+output = 'assets/02_SLF_hist_daily_measurements.csv'
+gdown.download(url, output, quiet=False)
 
 hist_measure_df = pd.read_csv('assets/02_SLF_hist_daily_measurements.csv', sep=';',skiprows=0)
 print(hist_measure_df.head())
