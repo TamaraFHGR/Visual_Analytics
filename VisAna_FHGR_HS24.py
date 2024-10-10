@@ -9,24 +9,24 @@ In this part, the historical (static) data are loaded from CSV files.
 The data are divided into three datasets:
 """
 
-# 1.1) Load Geodata of IMIS stations:
+# 1.1) Load Geodata of 204 IMIS stations (some only collect wind and temperature data, others also snow data):
 imis_df = pd.read_csv('assets/00_SLF_imis_stations.csv', sep=';', skiprows=0)
 print(imis_df.head())
 
-# 1.2) Load historical data of avalanche accidents:
-acc_df = pd.read_csv('assets/01_SLF_hist_avalanche_accidents.csv', sep=';',skiprows=3)
+# 1.2) Load historical data of avalanche accidents (3'301 records since 1998):
+acc_df = pd.read_csv('assets/01_SLF_hist_avalanche_accidents.csv', sep=';',skiprows=0)
 print(acc_df.head())
 
-# 1.3) Load historical IMIS measurement data:
+# 1.3) Load historical IMIS wind and temperature data:
 # Dataset 240MB and to large for GitHub. Download from Google Drive instead:
-url = 'https://drive.google.com/uc?id=1LwGMAvYekeEeD2f37E3YyMidP-nxlyzp'
-output = 'assets/02_SLF_hist_daily_measurements.csv'
-gdown.download(url, output, quiet=False)
+# url = 'https://drive.google.com/uc?id=1LwGMAvYekeEeD2f37E3YyMidP-nxlyzp'
+# output = 'assets/02_SLF_hist_daily_measurements.csv'
+#gdown.download(url, output, quiet=False)
 
 hist_measure_df = pd.read_csv('assets/02_SLF_hist_daily_measurements.csv', sep=';',skiprows=0)
 print(hist_measure_df.head())
 
-# 1.4) Load historical data of snow height (HS) and new snowfall (HN_1D):
+# 1.4) Load historical IMIS snow data:
 hist_snow_df = pd.read_csv('assets/03_SLF_hist_daily_snow.csv', sep=';',skiprows=0)
 print(hist_snow_df.head())
 
@@ -57,13 +57,11 @@ and the locations of the avalanche accidents.
 """
 
 def imis_accident_map(imis_df, acc_df):
-    # filter data on 2022 - 2023:
-    acc_df = acc_df[(acc_df['hydrological.year'] == '2021/22') | (acc_df['hydrological.year'] == '2022/23')]
     latitudes_imis = imis_df['lat']
-    latitudes_acc = acc_df['start.zone.coordinates.latitude']
+    latitudes_acc = acc_df['start_zone_coordinates_latitude']
     longitudes_imis = imis_df['lon']
-    longitudes_acc = acc_df['start.zone.coordinates.longitude']
-    station_names = imis_df['label']
+    longitudes_acc = acc_df['start_zone_coordinates_longitude']
+    station_names = imis_df['station_name']
     accident_names = acc_df['municipality']
 
     # Plot IMIS locations:
@@ -97,34 +95,5 @@ def imis_accident_map(imis_df, acc_df):
 
     fig.write_html('imis_stations_and_accidents.html', auto_open=True)
 
-#imis_accident_map(imis_df, acc_df)
 
-"""
-------------------------------------------------------------------------------------------------------------------------
-Part 4 - Visualize snow height and new snowfall data:
-In this part, the daily snow height and new snowfall data by stations are visualized.
-"""
-def snow_data_plot(snow_df):
-    fig = go.Figure()
-
-    for station in snow_df['station_code'].unique():
-        station_data = snow_df[hist_snow_df['station_code'] == station]
-        # Snow height as bar chart:
-        fig.add_trace(go.Bar(x=station_data['measure_date'], y=station_data['HS'], name=f'{station} Snow Height'))
-        # New snowfall as line chart:
-        fig.add_trace(go.Scatter(x=station_data['measure_date'], y=station_data['HN_1D'], mode='lines', name=f'{station} New Snowfall'))
-
-    fig.update_layout(
-        title='Snow Height and New Snowfall Data',
-        xaxis_title='Date',
-        yaxis_title='Snow Height / New Snowfall',
-        xaxis_tickformat='%d-%m-%Y',
-        legend_title='Station',
-        height=600,
-        width=1200
-    )
-
-    fig.write_html('snow_height_new_snowfall.html', auto_open=True)
-
-#snow_data_plot(hist_snow_df)
-
+imis_accident_map(imis_df, acc_df)
