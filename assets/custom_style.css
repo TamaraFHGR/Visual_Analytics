@@ -1,0 +1,90 @@
+/* Variablen */
+:root {
+    --font-primary: Arial, sans-serif;
+    --font-bold: bold;
+    --font-light: lighter;
+    --main-gap: 12px;
+    --font-size-h1: 24px;
+    --font-size-h2: 16px;
+    --font-size-h3: 12px;
+}
+/* Main Layout */
+.main_container {
+    display: flex;
+    width: 100%;
+}
+
+/* General Layout */
+.left_column, .right_column {
+    display: flex;
+    width: 50%;
+    flex-direction: column;
+    gap: var(--main-gap);
+    margin-left: var(--main-gap);
+}
+
+/* Buttons Style */
+.weather_buttons {
+    display: flex;
+    gap: 15px;
+    justify-content: left;
+    margin-left: var(--main-gap);
+    margin-top: 24px;
+}
+
+/* Live Weather Graphs */
+.live_weather {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    justify-content: left;
+    margin-left: var(--main-gap);
+    margin-top: 0;
+}
+
+/* Training Data Graphs */
+.training_data {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    justify-content: left;
+    margin-left: var(--main-gap);
+    margin-top: 0;
+}
+
+/* Hover Cursor */
+.hover_cursor {
+    cursor: url("/assets/cursor-icon.svg"), auto;
+}
+
+/* Font Styles */
+h1, h2, h3, h4, p {
+    font-family: var(--font-primary);
+    text-align: left;
+    margin-left: var(--main-gap);
+}
+h1 {
+    font-size: var(--font-size-h1);
+    font-weight: var(--font-bold);
+    margin: 12px 12px 12px 24px;
+    color: blue;
+}
+h2 {
+    font-size: var(--font-size-h2);
+    font-weight: var(--font-bold);
+}
+h3 {
+    font-size: var(--font-size-h3);
+    font-weight: normal;
+}
+h4 {
+    font-size: var(--font-size-h3);
+    font-weight: var(--font-light);
+    font-style: italic;
+    margin-top: 10px;
+}
+p {
+    font-size: var(--font-size-h3);
+    font-weight: normal;
+    margin: 6px 0 1px;
+}
