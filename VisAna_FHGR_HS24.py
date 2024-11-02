@@ -3,12 +3,11 @@ import pandas as pd
 import dash_bootstrap_components as dbc
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
-from Data_Loader import load_imis_stations, load_hist_measurements, load_accidents ,load_hist_snow, load_measurements, load_snow
-#from KDTree_Mapping_Weather_and_Accidents import find_closest_stations
+from Data_Loader import load_imis_stations, load_hist_measurements, load_hist_snow, load_measurements, load_snow
 
 # Load data:
 imis_df = load_imis_stations()
-acc_df = load_accidents()
+acc_df = pd.read_csv('assets/01_2_SLF_hist_mapped_avalanche_accidents.csv', sep=',', skiprows=0)
 hist_measure_df = load_hist_measurements()
 hist_snow_df = load_hist_snow()
 measure_df = load_measurements()
@@ -51,6 +50,7 @@ app.layout = html.Div([
                 dcc.Graph(id='training_geomap', className='hover_cursor'),
                 dcc.RangeSlider(id='altitude', min=1000, max=4000, step=500)
             ]),
+            html.H2('Statistics on Accident Data'),
             html.Div([
                 dcc.Graph(id='accidents_count'),
                 dcc.Graph(id='weather_trend ')

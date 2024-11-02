@@ -17,7 +17,7 @@ imis_df = load_imis_stations()
 
 # 1.2) Load historical data of avalanche accidents (3'301 records since 1998):
 def load_accidents():
-    acc_df = pd.read_csv('assets/01_SLF_hist_avalanche_accidents.csv', sep=';',skiprows=0)
+    acc_df = pd.read_csv('assets/01_1_SLF_hist_avalanche_accidents.csv', sep=';',skiprows=0)
     return acc_df
 
 acc_df = load_accidents()
