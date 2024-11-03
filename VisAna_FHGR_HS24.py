@@ -3,15 +3,16 @@ import pandas as pd
 import dash_bootstrap_components as dbc
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
-from Data_Loader import load_imis_stations, load_hist_measurements, load_hist_snow, load_measurements, load_snow
+from Data_Loader import load_imis_stations
+#from Data_Loader import load_hist_measurements, load_hist_snow, load_measurements, load_snow
 
 # Load data:
 imis_df = load_imis_stations()
 acc_df = pd.read_csv('assets/01_2_SLF_hist_mapped_avalanche_accidents.csv', sep=',', skiprows=0)
-hist_measure_df = load_hist_measurements()
-hist_snow_df = load_hist_snow()
-measure_df = load_measurements()
-snow_df = load_snow()
+#hist_measure_df = load_hist_measurements()
+#hist_snow_df = load_hist_snow()
+#measure_df = load_measurements()
+#snow_df = load_snow()
 
 # Create the Dash app:
 app = Dash(__name__, external_stylesheets=[dbc.themes.BOOTSTRAP, '/assets/custom_style.css'])
