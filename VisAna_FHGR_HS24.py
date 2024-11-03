@@ -54,7 +54,7 @@ app.layout = html.Div([
             html.H2('Statistics on Accident Data'),
             html.Div([
                 dcc.Graph(id='accidents_count'),
-                dcc.Graph(id='weather_trend ')
+                dcc.Graph(id='weather_trend')
             ], className='training_data'),
         ], style={'width': '50%', 'display': 'inline-block'}, className='right_column')
     ], className='main_container'),
@@ -216,6 +216,7 @@ def accidents_count(altitude):
 -----------------------------------------------------------------------------------------
 Section 3: Training Data Visualization -> Weather Trend
 """
+
 
 
 
