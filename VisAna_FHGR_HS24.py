@@ -8,7 +8,7 @@ from Data_Loader import load_imis_stations
 
 # Load data:
 imis_df = load_imis_stations()
-acc_df = pd.read_csv('assets/01_2_SLF_hist_mapped_avalanche_accidents.csv', sep=',', skiprows=0)
+acc_df = pd.read_csv('assets/01_3_SLF_hist_mapped_avalanche_accidents.csv', sep=',', skiprows=0)
 #hist_measure_df = load_hist_measurements()
 #hist_snow_df = load_hist_snow()
 #measure_df = load_measurements()
@@ -162,65 +162,70 @@ def accidents_count(altitude):
     filtered_acc_df['year'] = filtered_acc_df['date'].dt.year
     filtered_acc_df['month'] = filtered_acc_df['date'].dt.month
 
-    # Define periods for Small Multiples
-    periods = {
-        '1998-2010': (1998, 2010),
-        '2011-2023': (2011, 2023)
-    }
-
-    # Winter months (December, January, February, March)
+    # Define winter months and corresponding names
     winter_months = [11, 12, 1, 2, 3, 4]
     month_names = {11: 'November', 12: 'December', 1: 'January', 2: 'February', 3: 'March', 4: 'April'}
 
     # Create subplot structure for two small multiples
-    fig = make_subplots(rows=1, cols=2, subplot_titles=list(periods.keys()))
+    fig = make_subplots(rows=3, cols=3, subplot_titles=[month_names[m] for m in winter_months], vertical_spacing=0.05)
 
-    # Iterate over periods and add a bar plot for each
-    for i, (period_name, (start_year, end_year)) in enumerate(periods.items(), start=1):
-        # Filter data for the specific period and winter months
-        period_data = filtered_acc_df[
-            (filtered_acc_df['year'] >= start_year) &
-            (filtered_acc_df['year'] <= end_year) &
-            (filtered_acc_df['month'].isin(winter_months))
-        ]
+    # Loop over each winter month to create a separate bar chart for each:
+    for idx, month in enumerate(winter_months):
+        # Filter data for the month across all years
+        monthly_data = filtered_acc_df[filtered_acc_df['month'] == month]
 
-        # Count accidents per winter month within the period
-        monthly_counts = period_data.groupby('month').size().reindex(winter_months, fill_value=0)
+        # Count accidents per year within the month
+        yearly_counts = monthly_data.groupby('year').size()
 
-        # Add the data as a horizontal bar plot in the respective subplot
+        # Calculate row and column for the subplot (3x3 grid)
+        row = (idx // 3) + 1
+        col = (idx % 3) + 1
+
+        # Add bar chart to the respective subplot
         fig.add_trace(
             go.Bar(
-                x=[month_names[month] for month in monthly_counts.index],  # Convert month numbers to names
-                y=monthly_counts.values,
-                #orientation='h',
+                x=yearly_counts.index,  # Years
+                y=yearly_counts.values,
+                name=month_names[month],
                 marker_color='darkblue'
             ),
-            row=1, col=i
+            row=row, col=col
         )
+
+        # Set y-axis range for the subplot
+        fig.update_yaxes(range=[0, 80], row=row, col=col)
 
     # Update layout
     fig.update_layout(
-        title='Number of accidents by month',
-        showlegend=False
+        title='Number of accidents by year for each winter month',
+        showlegend=False,
+        height=800
     )
 
-    # Set X-axis range to a maximum of 600 for both subplots
-    fig.update_yaxes(title_text='Number of Accidents', range=[0, 600], row=1, col=1)
-    fig.update_yaxes(title_text='Number of Accidents', range=[0, 600], row=1, col=2)
-    fig.update_xaxes(title_text='Winter Months')
-
     return fig
-
 
 """
 -----------------------------------------------------------------------------------------
 Section 3: Training Data Visualization -> Weather Trend
 """
+@app.callback(
+    Output('weather_trend', 'figure'),
+    [Input('altitude', 'value')]
+)
+def weather_trend(altitude):
+    # Filter data by altitude
+    if altitude:
+        min_altitude, max_altitude = altitude
+        filtered_acc_df = acc_df[
+            (acc_df['start_zone_elevation'] >= min_altitude) & (acc_df['start_zone_elevation'] <= max_altitude)]
+    else:
+        filtered_acc_df = acc_df
 
-
-
-
-
+    # Create Distribution of Snow Height:
+    fig = go.Figure()
+    fig.add_trace(go.Histogram
+                  (x=filtered_acc_df['mean_air_temp'], nbinsx=20, marker_color='blue'))
+    return fig
 
 if __name__ == '__main__':
     app.run_server(debug=True)

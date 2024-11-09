@@ -1,38 +1,17 @@
 import numpy as np
 import pandas as pd
 from sklearn.neighbors import NearestNeighbors
-from Data_Loader import load_imis_stations, load_accidents, load_hist_measurements, load_hist_snow
+from Data_Loader import load_hist_measurements
+from timeit import default_timer as timer
 
-# Load data
-imis_df = load_imis_stations()
-acc_df = load_accidents()
+start = timer()
+acc_df = pd.read_csv('assets/01_2_SLF_hist_avalanche_accidents_mapped.csv', sep=',', skiprows=0)
 hist_measure_df = load_hist_measurements()
-hist_snow_df = load_hist_snow()
-
-# K-NN Model to fill missing elevation data in accidents df based on 3 nearest neighbors
-# (output: acc_complete_df):
-def fill_missing_elevation_with_knn(acc_df, n_neighbors=3):
-    acc_with_elevation = acc_df.dropna(subset=['start_zone_elevation'])
-    acc_without_elevation = acc_df[acc_df['start_zone_elevation'].isna()]
-
-    knn = NearestNeighbors(n_neighbors=n_neighbors)
-    knn.fit(acc_with_elevation[['start_zone_coordinates_latitude', 'start_zone_coordinates_longitude']])
-
-    distances, indices = knn.kneighbors(
-        acc_without_elevation[['start_zone_coordinates_latitude', 'start_zone_coordinates_longitude']]
-    )
-
-    for i, idx in enumerate(acc_without_elevation.index):
-        neighbor_indices = indices[i]
-        mean_elevation = acc_with_elevation.iloc[neighbor_indices]['start_zone_elevation'].mean()
-        acc_df.at[idx, 'start_zone_elevation'] = mean_elevation
-
-    return acc_df
-acc_complete_df = fill_missing_elevation_with_knn(acc_df)
 
 # K-NN Model to map historical weather data to accidents based on 3 nearest neighbors
-# (output: acc_mapped_df):
-def find_closest_weather_stations(imis_df, acc_complete_df, hist_measure_df):
+# (output: acc_mapped_weather_df):
+def find_closest_weather_stations(acc_df, hist_measure_df, lat_lon_weight, elevation_weight):
+    # Define the weather columns:
     weather_columns = {
         'mean_air_temp': 'air_temp_day_mean',
         'mean_wind_speed': 'wind_speed_day_mean',
@@ -41,67 +20,74 @@ def find_closest_weather_stations(imis_df, acc_complete_df, hist_measure_df):
         'mean_snow_ground_temp': 'snow_ground_temp_day_mean'
     }
 
-    knn = NearestNeighbors(n_neighbors=3, algorithm='ball_tree')
-    knn.fit(imis_df[['lat', 'lon', 'elevation']])
+    # Create new DataFrame for weather data and stations:
+    weather_data = pd.DataFrame(index=acc_df.index, columns=weather_columns.keys())
+    used_station_codes = pd.Series(index=acc_df.index, dtype=object)
 
-    accident_coords = acc_complete_df[['start_zone_coordinates_latitude',
-                                       'start_zone_coordinates_longitude',
-                                       'start_zone_elevation']].copy()
-    accident_coords.columns = ['lat', 'lon', 'elevation']
+    # Iterate over all accident data:
+    for i, accident in acc_df.iterrows():
+        accident_date = accident['date']
 
-    distances, indices = knn.kneighbors(accident_coords)
+        # Filter weather data by accident date:
+        same_day_measurements = hist_measure_df[hist_measure_df['measure_date'] == accident_date]
 
-    for i in range(len(acc_complete_df)):
-        nearest_station_indices = indices[i]
-        nearest_station_codes = imis_df.iloc[nearest_station_indices]['code'].values
-        accident_date = acc_complete_df.at[i, 'date']
+        if same_day_measurements.empty:
+            continue
 
-        day_measurements = hist_measure_df[(hist_measure_df['station_code'].isin(nearest_station_codes)) &
-                                           (hist_measure_df['measure_date'] == accident_date)]
+        # Scaling of latitude, longitude, and elevation:
+        scaled_lat_lon = same_day_measurements[['imis_longitude', 'imis_latitude']] * lat_lon_weight
+        scaled_elevation = same_day_measurements['imis_elevation'] * elevation_weight
+        scaled_coords = pd.concat([scaled_lat_lon, scaled_elevation], axis=1)
 
-        if not day_measurements.empty:
-            for new_col, orig_col in weather_columns.items():
-                acc_complete_df.at[i, new_col] = day_measurements[orig_col].mean()
+        # Train the K-NN model with the geographical data (Longitude, Latitude, Elevation):
+        knn = NearestNeighbors(n_neighbors=6, algorithm='ball_tree')
+        knn.fit(scaled_coords)
 
-    return acc_complete_df
+        # Define the accident point (Longitude, Latitude, Elevation):
+        accident_point = pd.DataFrame([[accident['start_zone_coordinates_longitude'] * lat_lon_weight,
+                                        accident['start_zone_coordinates_latitude'] * lat_lon_weight,
+                                        accident['start_zone_elevation'] * elevation_weight
+                                        ]],
+                                      columns=['imis_longitude', 'imis_latitude', 'imis_elevation'])
 
-# K-NN Model to map historical snow data to accidents based on 3 nearest neighbors
-# (output: acc_mapped_df):
-def find_closest_snow_stations(imis_df, acc_complete_df, hist_snow_df):
-    snow_columns = {
-        'mean_snow_height': 'snow_height_cm',
-        'mean_new_snow': 'new_snow_cm'
-    }
+        # Find the nearest neighbors:
+        distances, indices = knn.kneighbors(accident_point)
 
-    knn = NearestNeighbors(n_neighbors=3, algorithm='ball_tree')
-    knn.fit(imis_df[['lat', 'lon', 'elevation']])
+        # Filter valid neighbors:
+        valid_indices = [idx for idx in indices[0] if idx < len(same_day_measurements)]
+        num_neighbors = min(3, len(valid_indices))
 
-    accident_coords = acc_complete_df[['start_zone_coordinates_latitude',
-                                         'start_zone_coordinates_longitude',
-                                         'start_zone_elevation']].copy()
-    accident_coords.columns = ['lat', 'lon', 'elevation']
+        if num_neighbors == 0:
+            continue
 
-    distances, indices = knn.kneighbors(accident_coords)
+        neighbor_indices = valid_indices[:num_neighbors]
 
-    for i in range(len(acc_complete_df)):
-        nearest_station_indices = indices[i]
-        nearest_station_codes = imis_df.iloc[nearest_station_indices]['code'].values
-        accident_date = acc_complete_df.at[i, 'date']
+        # Calculate the mean values of the weather data:
+        neighbor_data = same_day_measurements.iloc[neighbor_indices]
+        mean_values = neighbor_data[list(weather_columns.values())].mean()
 
-        day_snow_data = hist_snow_df[(hist_snow_df['station_code'].isin(nearest_station_codes)) &
-                                     (hist_snow_df['measure_date'] == accident_date)]
+        # If NaN values are present, try with the next 6 neighbors:
+        if np.isnan(mean_values.mean()) and len(valid_indices) >= 6:
+            num_neighbors = min(6, len(valid_indices))
+            neighbor_indices = valid_indices[:num_neighbors]
+            neighbor_data = same_day_measurements.iloc[neighbor_indices]
+            mean_values = neighbor_data[list(weather_columns.values())].mean()
 
-        if not day_snow_data.empty:
-            for new_col, orig_col in snow_columns.items():
-                acc_complete_df.at[i, new_col] = day_snow_data[orig_col].mean()
+        # Assign the mean values to the corresponding column:
+        for col, source_col in weather_columns.items():
+            weather_data.at[i, col] = mean_values.get(source_col, np.nan)
 
-    return acc_complete_df
+        # Save the used stations:
+        used_station_codes.at[i] = ', '.join(neighbor_data['station_code'].astype(str))
 
-# Aufruf der Funktionen
-acc_mapped_df = find_closest_weather_stations(imis_df, acc_complete_df, hist_measure_df)
-acc_mapped_df = find_closest_snow_stations(imis_df, acc_complete_df, hist_snow_df)
+    # Add the column for the used stations to the weather data DataFrame:
+    weather_data['used_station_codes'] = used_station_codes
 
-# Speichern des finalen DataFrames als CSV
-acc_mapped_df.to_csv('assets/01_2_SLF_hist_mapped_avalanche_accidents.csv', index=False)
-print(acc_mapped_df.head())
-print('Data saved successfully.')
+    # Combine the original accident data with the weather data:
+    acc_mapped_weather_df = pd.concat([acc_df, weather_data], axis=1)
+    return acc_mapped_weather_df
+
+acc_mapped_weather_df = find_closest_weather_stations(acc_df, hist_measure_df, 1.0, 0.1)
+acc_mapped_weather_df.to_csv('assets/01_3_SLF_hist_mapped_avalanche_accidents.csv', index=False)
+print(acc_mapped_weather_df.head())
+print(f"Runtime: {timer()-start:.2f} s")
