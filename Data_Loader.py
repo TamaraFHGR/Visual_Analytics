@@ -28,7 +28,7 @@ acc_df = load_accidents()
 # Dataset >100MB and too large for GitHub. Download from Google Drive instead:
 def load_hist_measurements():
     #hist_measure_df = pd.read_csv('assets/02_SLF_hist_daily_measurements.csv', sep=';',skiprows=0)
-    url = 'https://drive.google.com/uc?id=1LwGMAvYekeEeD2f37E3YyMidP-nxlyzp'
+    url = 'https://drive.google.com/uc?export=download&id=19ic33PFOwvK1w79RmhfDPToiffBN09R6'
     output = 'assets/02_SLF_hist_daily_measurements.csv'
     gdown.download(url, output, quiet=False)
     hist_measure_df = pd.read_csv('assets/02_SLF_hist_daily_measurements.csv', sep=';',skiprows=0)
