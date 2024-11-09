@@ -27,11 +27,11 @@ acc_df = load_accidents()
 # 1.3) Load historical IMIS wind and temperature data:
 # Dataset >100MB and too large for GitHub. Download from Google Drive instead:
 def load_hist_measurements():
-    hist_measure_df = pd.read_csv('assets/02_SLF_hist_daily_measurements.csv', sep=';',skiprows=0)
-    #url = 'https://drive.google.com/uc?id=1LwGMAvYekeEeD2f37E3YyMidP-nxlyzp'
-    #output = 'assets/02_SLF_hist_daily_measurements.csv'
-    #gdown.download(url, output, quiet=False)
     #hist_measure_df = pd.read_csv('assets/02_SLF_hist_daily_measurements.csv', sep=';',skiprows=0)
+    url = 'https://drive.google.com/uc?id=1LwGMAvYekeEeD2f37E3YyMidP-nxlyzp'
+    output = 'assets/02_SLF_hist_daily_measurements.csv'
+    gdown.download(url, output, quiet=False)
+    hist_measure_df = pd.read_csv('assets/02_SLF_hist_daily_measurements.csv', sep=';',skiprows=0)
     return hist_measure_df
 
 hist_measure_df = load_hist_measurements()
