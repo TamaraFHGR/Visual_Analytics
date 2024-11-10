@@ -29,8 +29,9 @@ app.layout = html.Div([
             html.Div([
                 html.Button('Temperature', id='temp_button', n_clicks=0),
                 html.Button('Wind', id='wind_button', n_clicks=0),
-                html.Button('New Snow', id='new_snow_button', n_clicks=0),
                 html.Button('Snow Height', id='snow_height_button', n_clicks=0),
+                html.Button('New Snow', id='new_snow_button', n_clicks=0),
+                html.Button('Default', id='default_button', n_clicks=0)
             ], className='weather_buttons'),
             html.Div([
                 dcc.Graph(id='live_geomap'),
@@ -42,13 +43,12 @@ app.layout = html.Div([
         html.Div([
             html.H2('Historical Avalanche Accident Data'),
             html.Div([
-                dcc.Graph(id='training_geomap', className='hover_cursor'),
-                dcc.RangeSlider(id='altitude', min=1000, max=4000, step=500)
+                dcc.RangeSlider(id='altitude', min=1000, max=4000, step=500),
+                dcc.Graph(id='training_geomap', className='hover_cursor')
             ]),
             html.H2('Statistics on Accident Data'),
             html.Div([
-                dcc.Graph(id='accidents_count'),
-                dcc.Graph(id='weather_trend')
+                dcc.Graph(id='accidents_stats'),
             ], className='training_data'),
         ], style={'width': '50%', 'display': 'inline-block'}, className='right_column')
     ], className='main_container'),
@@ -56,7 +56,7 @@ app.layout = html.Div([
 
 """
 -----------------------------------------------------------------------------------------
-Section 1: Training Data Visualization -> Geo Map
+Section 1: Training Data Visualization -> Geo Map (right column)
 """
 
 # Callback to open the station document in a new tab
@@ -126,100 +126,143 @@ def imis_accident_map(altitude):
 
     fig.update_layout(
         map_style="light",
-        map_zoom=8,  # Adjust zoom level
+        map_zoom=6.2,  # Adjust zoom level
         map_center={"lat": lat_imis.mean(), "lon": long_imis.mean()},  # Center map on the average location
-        margin={"r":0,"t":0,"l":0,"b":0}  # Remove margins around the map
+        margin={"r":0,"t":0,"l":0,"b":0}, # Remove margins around the map
+        height=250
     )
     #fig.write_html('imis_stations_and_accidents.html', auto_open=True)
     return fig
 
 """
 -----------------------------------------------------------------------------------------
-Section 2: Training Data Visualization -> Accident Count
+Section 2: Training Data Visualization -> Accident Statistics (right column)
 """
 
 @app.callback(
-    Output('accidents_count', 'figure'),
-    [Input('altitude', 'value')]
+    Output('accidents_stats', 'figure'),
+    [Input('default_button', 'n_clicks'),
+     Input('temp_button', 'n_clicks'),
+     Input('wind_button', 'n_clicks'),
+     Input('new_snow_button', 'n_clicks'),
+     Input('snow_height_button', 'n_clicks')]
 )
-def accidents_count(altitude):
-    # Filter data by altitude
-    if altitude:
-        min_altitude, max_altitude = altitude
-        filtered_acc_df = acc_df[
-            (acc_df['start_zone_elevation'] >= min_altitude) & (acc_df['start_zone_elevation'] <= max_altitude)]
+def accidents_stats(default_button, temp_button, wind_button, new_snow_button, snow_height_button):
+    # Determine which button was last clicked, or use 'default_button' if none was clicked:
+    ctx = callback_context
+    if not ctx.triggered:
+        button_id = 'default_button'
     else:
-        filtered_acc_df = acc_df
+        button_id = ctx.triggered[0]['prop_id'].split('.')[0]
 
-    # Convert dates to datetime and add year and month columns
+    # Filter data by altitude -> to be implemented:
+    filtered_acc_df = acc_df
+
+    # Convert dates to datetime and add year and month columns:
     filtered_acc_df['date'] = pd.to_datetime(filtered_acc_df['date'])
     filtered_acc_df['year'] = filtered_acc_df['date'].dt.year
     filtered_acc_df['month'] = filtered_acc_df['date'].dt.month
 
-    # Define winter months and corresponding names
+    # Define winter months and corresponding names:
     winter_months = [11, 12, 1, 2, 3, 4]
     month_names = {11: 'November', 12: 'December', 1: 'January', 2: 'February', 3: 'March', 4: 'April'}
 
-    # Create subplot structure for two small multiples
-    fig = make_subplots(rows=3, cols=3, subplot_titles=[month_names[m] for m in winter_months], vertical_spacing=0.05)
+    # Create subplot structure for two small multiples:
+    fig = make_subplots(rows=3, cols=3, subplot_titles=[month_names[m] for m in winter_months], vertical_spacing=0.05, horizontal_spacing=0.05)
 
-    # Loop over each winter month to create a separate bar chart for each:
-    for idx, month in enumerate(winter_months):
-        # Filter data for the month across all years
-        monthly_data = filtered_acc_df[filtered_acc_df['month'] == month]
+    # Set the font size for subplot titles specifically
+    for i, month in enumerate(winter_months):
+        fig['layout']['annotations'][i].update(font=dict(size=8))
 
-        # Count accidents per year within the month
-        yearly_counts = monthly_data.groupby('year').size()
+    # Check which plot to display based on the button clicked
+    if button_id == 'temp_button':
+        # Temperature histogram by month:
+        for idx, month in enumerate(winter_months):
+            monthly_data = filtered_acc_df[filtered_acc_df['month'] == month]
+            row, col = (idx // 3) + 1, (idx % 3) + 1
+            fig.add_trace(
+                go.Histogram(x=monthly_data['air_temp_mean_stations'], nbinsx=20, marker_color='blue'),
+                row=row, col=col
+            )
+            # Set y-axis range for the subplot
+            fig.update_yaxes(range=[0, 100], row=row, col=col)
 
-        # Calculate row and column for the subplot (3x3 grid)
-        row = (idx // 3) + 1
-        col = (idx % 3) + 1
+    elif button_id == 'wind_button':
+        # Wind speed histogram by month:
+        for idx, month in enumerate(winter_months):
+            monthly_data = filtered_acc_df[filtered_acc_df['month'] == month]
+            row, col = (idx // 3) + 1, (idx % 3) + 1
+            fig.add_trace(
+                go.Histogram(x=monthly_data['wind_speed_mean_stations'], nbinsx=20, marker_color='green'),
+                row=row, col=col
+            )
+            # Set axis range for the subplot
+            fig.update_yaxes(range=[0, 200], row=row, col=col)
+            #fig.update_xaxes(range=[0, 10], row=row, col=col)
 
-        # Add bar chart to the respective subplot
-        fig.add_trace(
-            go.Bar(
-                x=yearly_counts.index,  # Years
-                y=yearly_counts.values,
-                name=month_names[month],
-                marker_color='darkblue'
-            ),
-            row=row, col=col
-        )
+    elif button_id == 'snow_height_button':
+        # Snow height histogram by month:
+        for idx, month in enumerate(winter_months):
+            monthly_data = filtered_acc_df[filtered_acc_df['month'] == month]
+            row, col = (idx // 3) + 1, (idx % 3) + 1
+            fig.add_trace(
+                go.Histogram(x=monthly_data['snow_height_mean_stations'], nbinsx=20, marker_color='orange'),
+                row=row, col=col
+            )
+            # Set y-axis range for the subplot
+            #fig.update_yaxes(range=[0, 100], row=row, col=col)
 
-        # Set y-axis range for the subplot
-        fig.update_yaxes(range=[0, 80], row=row, col=col)
+    elif button_id == 'new_snow_button':
+        # New snow histogram by month:
+        for idx, month in enumerate(winter_months):
+            monthly_data = filtered_acc_df[filtered_acc_df['month'] == month]
+            row, col = (idx // 3) + 1, (idx % 3) + 1
+            fig.add_trace(
+                go.Histogram(x=monthly_data['new_snow_mean_stations'], nbinsx=20, marker_color='red'),
+                row=row, col=col
+            )
+            # Set y-axis range for the subplot
+            #fig.update_yaxes(range=[0, 100], row=row, col=col)
+
+    elif button_id == 'default_button':
+        # Plot accident counts as bar charts (default):
+        for idx, month in enumerate(winter_months):
+            monthly_data = filtered_acc_df[filtered_acc_df['month'] == month]
+            yearly_counts = monthly_data.groupby('year').size()
+
+            # Calculate row and column for the subplot
+            row = (idx // 3) + 1
+            col = (idx % 3) + 1
+
+            # Add bar chart to the respective subplot
+            fig.add_trace(
+                go.Bar(
+                    x=yearly_counts.index,
+                    y=yearly_counts.values,
+                    name=month_names[month],
+                    marker_color='darkblue'
+                ),
+                row=row, col=col
+            )
+            # Set y-axis range for the subplot
+            fig.update_yaxes(range=[0, 80], row=row, col=col)
 
     # Update layout
     fig.update_layout(
-        title='Number of accidents by year for each winter month',
+        #title='Number of accidents by year for each winter month',
         showlegend=False,
-        height=800
+        height=500,
+        margin=dict(t=15, b=0, l=0, r=0),
+        font=dict(size=8)
     )
 
     return fig
 
 """
 -----------------------------------------------------------------------------------------
-Section 3: Training Data Visualization -> Weather Trend
+Section 3: ...
 """
-@app.callback(
-    Output('weather_trend', 'figure'),
-    [Input('altitude', 'value')]
-)
-def weather_trend(altitude):
-    # Filter data by altitude
-    if altitude:
-        min_altitude, max_altitude = altitude
-        filtered_acc_df = acc_df[
-            (acc_df['start_zone_elevation'] >= min_altitude) & (acc_df['start_zone_elevation'] <= max_altitude)]
-    else:
-        filtered_acc_df = acc_df
 
-    # Create Distribution of Snow Height:
-    fig = go.Figure()
-    fig.add_trace(go.Histogram
-                  (x=filtered_acc_df['air_temp_mean_stations'], nbinsx=20, marker_color='blue'))
-    return fig
 
 if __name__ == '__main__':
     app.run_server(debug=True)
