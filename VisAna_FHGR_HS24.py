@@ -3,16 +3,10 @@ import pandas as pd
 import dash_bootstrap_components as dbc
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
-from Data_Loader import load_imis_stations
-#from Data_Loader import load_hist_measurements, load_hist_snow, load_measurements, load_snow
+from Data_Loader import load_hist_data, load_imis_stations
 
-# Load data:
+acc_df = load_hist_data()
 imis_df = load_imis_stations()
-acc_df = pd.read_csv('assets/01_3_SLF_hist_mapped_avalanche_accidents.csv', sep=',', skiprows=0)
-#hist_measure_df = load_hist_measurements()
-#hist_snow_df = load_hist_snow()
-#measure_df = load_measurements()
-#snow_df = load_snow()
 
 # Create the Dash app:
 app = Dash(__name__, external_stylesheets=[dbc.themes.BOOTSTRAP, '/assets/custom_style.css'])
@@ -72,9 +66,9 @@ Section 1: Training Data Visualization -> Geo Map
 )
 def open_station_document(clickData):
     if clickData:
-        # Extrahiere die URL aus customdata
+        # Extract URL from the click data
         url = clickData['points'][0]['customdata']
-        return url  # Setzt die URL des dcc.Location-Elements und öffnet es im Browser
+        return url
     return no_update
 
 # Callback to update the training data map based on the selected altitude range
@@ -224,7 +218,7 @@ def weather_trend(altitude):
     # Create Distribution of Snow Height:
     fig = go.Figure()
     fig.add_trace(go.Histogram
-                  (x=filtered_acc_df['mean_air_temp'], nbinsx=20, marker_color='blue'))
+                  (x=filtered_acc_df['air_temp_mean_stations'], nbinsx=20, marker_color='blue'))
     return fig
 
 if __name__ == '__main__':

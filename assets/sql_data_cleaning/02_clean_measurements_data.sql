@@ -7,7 +7,7 @@ SELECT
 	   md.[station_code]
 	  ,im.[station_name]
 	  ,im.[lon] as imis_longitude
-	  ,im.[lat] as imis_latitued
+	  ,im.[lat] as imis_latitude
 	  ,im.[elevation] as imis_elevation
 	  ,im.[canton_code] as canton
 	  ,'WEATHER' as imis_type
