@@ -11,13 +11,22 @@
 /* Main Layout */
 .main_container {
     display: flex;
-    width: 100%;
+    width: 120%;
+    transform: scale(0.8);
+    transform-origin: top left;
 }
 
 /* General Layout */
-.left_column, .right_column {
+.right_column {
     display: flex;
-    width: 50%;
+    width: 45%;
+    flex-direction: column;
+    gap: var(--main-gap);
+    margin-left: var(--main-gap);
+}
+.left_column {
+    display: flex;
+    width: 75%;
     flex-direction: column;
     gap: var(--main-gap);
     margin-left: var(--main-gap);

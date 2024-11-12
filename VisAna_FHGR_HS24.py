@@ -1,16 +1,21 @@
 from dash import Dash, dcc, html, Input, Output, State, callback_context, no_update
+import os
 from datetime import datetime
 import pandas as pd
 import dash_bootstrap_components as dbc
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
-from Data_Loader import load_hist_data, load_imis_stations, load_measurements, load_snow
+from Data_Loader import load_hist_data, load_imis_stations, load_measurements, load_snow, load_measurements_trend, load_snow_trend
 
 acc_df = load_hist_data()
 imis_df = load_imis_stations()
 daily_weather_df = load_measurements()
 daily_snow_df = load_snow()
-today_date = datetime.now().strftime('%Y-%m-%d')  # Format: Jahr-Monat-Tag
+trend_measure_df = load_measurements_trend()
+trend_snow_df = load_snow_trend()
+
+last_update = datetime.fromtimestamp(os.path.getmtime('assets/API/daily/05_SLF_daily_imis_snow_clean.csv')).strftime('%Y-%m-%d-%H:%M')
+
 
 # Create the Dash app:
 app = Dash(__name__, external_stylesheets=[dbc.themes.BOOTSTRAP, '/assets/custom_style.css'])
@@ -29,7 +34,7 @@ app.layout = html.Div([
     html.Div([
         html.Div([
             html.H2('Current Weather Conditions in the Swiss Alps'),
-            html.H3(f'Last Update: {today_date}', style={'color': 'grey'}),
+            html.H3(f'Last Update: {last_update}', style={'color': 'grey'}),
             html.Div([
                 html.Button('Stations', id='default_button', n_clicks=0),
                 html.Button('Temperature', id='temp_button', n_clicks=0),
@@ -39,9 +44,18 @@ app.layout = html.Div([
             ], className='weather_buttons'),
             html.Div([
                 dcc.Graph(id='live_geomap'),
+                html.Div([
+                    html.H2('Trend Analysis'),
+                    dcc.Dropdown(id='station_dropdown',
+                                 options=[{'label': station, 'value': station} for station in imis_df['code'].unique()],
+                                 multi=True,
+                                 placeholder="Select stations",
+                                 value=[]),
+                    dcc.Graph(id='trend_analysis')
+                    ], className='trend_plot'),
                 #dcc.Graph(id='risk_map')
             ], className='live_weather'),
-        ], style={'width': '50%', 'display': 'inline-block'}, className='left_column'),
+        ], style={'display': 'inline-block'}, className='left_column'),
 
         #Column 2 of 2 (right):
         html.Div([
@@ -54,7 +68,7 @@ app.layout = html.Div([
             html.Div([
                 dcc.Graph(id='accidents_stats'),
             ], className='training_data'),
-        ], style={'width': '50%', 'display': 'inline-block'}, className='right_column')
+        ], style={'display': 'inline-block'}, className='right_column')
     ], className='main_container'),
 ])
 
@@ -328,10 +342,97 @@ def imis_live_map(default_button, temp_button, wind_button, new_snow_button, sno
         map_zoom=7,  # Adjust zoom level
         map_center={"lat": lat_imis.mean(), "lon": long_imis.mean()},  # Center map on the average location
         margin={"r":0,"t":0,"l":0,"b":0}, # Remove margins around the map
-        height=450
+        height=400
     )
     return fig
 
+
+"""
+-----------------------------------------------------------------------------------------
+Section 4: Live Weather Data Visualization -> Trend Analysis (left column)
+"""
+
+@app.callback(
+    Output('trend_analysis', 'figure'),
+    [Input('default_button', 'n_clicks'),
+     Input('temp_button', 'n_clicks'),
+     Input('wind_button', 'n_clicks'),
+     Input('new_snow_button', 'n_clicks'),
+     Input('snow_height_button', 'n_clicks'),
+     Input('station_dropdown', 'value')]
+)
+
+def weather_trend(default_button, temp_button, wind_button, new_snow_button, snow_height_button, selected_stations):
+    # Determine which button was last clicked, or use 'default_button' if none was clicked:
+    ctx = callback_context
+    if not ctx.triggered:
+        button_id = 'default_button'
+    else:
+        button_id = ctx.triggered[0]['prop_id'].split('.')[0]
+
+    fig = go.Figure()
+
+    # Add Line Plot for temperature:
+    if button_id == 'temp_button' and selected_stations:
+        for station in selected_stations:
+            station_data = trend_measure_df[trend_measure_df['code'] == station]
+            fig.add_trace(go.Scatter(
+                x=station_data['date'],
+                y=station_data['air_temp_daily_mean'],
+                mode='lines', name=station)
+            )
+            fig.update_layout(xaxis_title="Measure Date",
+                              yaxis_title="Air Temperature [°C]",
+                              legend_title="Station Code",
+                              margin={"r":0,"t":0,"l":0,"b":0},
+                              height=300)
+
+    # Add Line Plot for wind:
+    elif button_id == 'wind_button' and selected_stations:
+        for station in selected_stations:
+            station_data = trend_measure_df[trend_measure_df['code'] == station]
+            fig.add_trace(go.Scatter(
+                x=station_data['date'],
+                y=station_data['wind_speed_daily_mean'],
+                mode='lines', name=station)
+            )
+            fig.update_layout(xaxis_title="Measure Date",
+                              yaxis_title="Wind speed [m/s]",
+                              legend_title="Station Code",
+                              margin={"r": 0, "t": 0, "l": 0, "b": 0},
+                              height=300)
+
+    # Add Line Plot for snow height:
+    elif button_id == 'snow_height_button' and selected_stations:
+        for station in selected_stations:
+            station_data = trend_snow_df[trend_snow_df['code'] == station]
+            fig.add_trace(go.Scatter(
+                x=station_data['date'],
+                y=station_data['snow_height_daily_mean'],
+                mode='lines', name=station)
+            )
+            fig.update_layout(xaxis_title="Measure Date",
+                              yaxis_title="Height of Snowpack [cm]",
+                              legend_title="Station Code",
+                              margin={"r":0,"t":0,"l":0,"b":0},
+                              height=300)
+
+    # Add Line Plot for new snow:
+    elif button_id == 'new_snow_button' and selected_stations:
+        for station in selected_stations:
+            station_data = trend_snow_df[trend_snow_df['code'] == station]
+            fig.add_trace(go.Scatter(
+                x=station_data['date'],
+                y=station_data['new_snow_daily_mean'],
+                mode='lines', name=station)
+            )
+            fig.update_layout(xaxis_title="Measure Date",
+                              yaxis_title="Height of new Snow [cm]",
+                              legend_title="Station Code",
+                              margin={"r": 0, "t": 0, "l": 0, "b": 0},
+                              height=300)
+
+    return fig
 
 if __name__ == '__main__':
     app.run_server(debug=True)
