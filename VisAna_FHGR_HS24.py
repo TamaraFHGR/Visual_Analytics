@@ -1,12 +1,16 @@
 from dash import Dash, dcc, html, Input, Output, State, callback_context, no_update
+from datetime import datetime
 import pandas as pd
 import dash_bootstrap_components as dbc
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
-from Data_Loader import load_hist_data, load_imis_stations
+from Data_Loader import load_hist_data, load_imis_stations, load_measurements, load_snow
 
 acc_df = load_hist_data()
 imis_df = load_imis_stations()
+daily_weather_df = load_measurements()
+daily_snow_df = load_snow()
+today_date = datetime.now().strftime('%Y-%m-%d')  # Format: Jahr-Monat-Tag
 
 # Create the Dash app:
 app = Dash(__name__, external_stylesheets=[dbc.themes.BOOTSTRAP, '/assets/custom_style.css'])
@@ -25,17 +29,17 @@ app.layout = html.Div([
     html.Div([
         html.Div([
             html.H2('Current Weather Conditions in the Swiss Alps'),
-            html.H3('Last Update: ....'),
+            html.H3(f'Last Update: {today_date}', style={'color': 'grey'}),
             html.Div([
+                html.Button('Stations', id='default_button', n_clicks=0),
                 html.Button('Temperature', id='temp_button', n_clicks=0),
                 html.Button('Wind', id='wind_button', n_clicks=0),
                 html.Button('Snow Height', id='snow_height_button', n_clicks=0),
-                html.Button('New Snow', id='new_snow_button', n_clicks=0),
-                html.Button('Default', id='default_button', n_clicks=0)
+                html.Button('New Snow', id='new_snow_button', n_clicks=0)
             ], className='weather_buttons'),
             html.Div([
                 dcc.Graph(id='live_geomap'),
-                dcc.Graph(id='risk_map')
+                #dcc.Graph(id='risk_map')
             ], className='live_weather'),
         ], style={'width': '50%', 'display': 'inline-block'}, className='left_column'),
 
@@ -59,18 +63,6 @@ app.layout = html.Div([
 Section 1: Training Data Visualization -> Geo Map (right column)
 """
 
-# Callback to open the station document in a new tab
-@app.callback(
-    Output('url', 'href'),
-    [Input('training_geomap', 'clickData')]
-)
-def open_station_document(clickData):
-    if clickData:
-        # Extract URL from the click data
-        url = clickData['points'][0]['customdata']
-        return url
-    return no_update
-
 # Callback to update the training data map based on the selected altitude range
 @app.callback(
     Output('training_geomap', 'figure'),
@@ -80,42 +72,15 @@ def imis_accident_map(altitude):
     # filter data by altitude:
     if altitude:
         min_altitude, max_altitude = altitude
-        filtered_imis_df = imis_df[(imis_df['elevation'] >= min_altitude) & (imis_df['elevation'] <= max_altitude)]
         filtered_acc_df = acc_df[(acc_df['start_zone_elevation'] >= min_altitude) & (acc_df['start_zone_elevation'] <= max_altitude)]
     else:
-        filtered_imis_df = imis_df
         filtered_acc_df = acc_df
 
-    # URL for the IMIS station Details:
-    filtered_imis_df['data_url'] = filtered_imis_df['code'].apply(lambda code: f"https://stationdocu.slf.ch/pdf/IMIS_{code}_DE.pdf")
-    filtered_imis_df['hover_text'] = filtered_imis_df.apply(
-        lambda row: f"{row['code']} - {row['station_name']}<br>"
-                    f"Elevation: {row['elevation']} m<br>"
-                    f"(click to open data sheet)", axis=1
-    )
-
-    lat_imis = filtered_imis_df['lat']
-    long_imis = filtered_imis_df['lon']
     lat_acc = filtered_acc_df['start_zone_coordinates_latitude']
     long_acc = filtered_acc_df['start_zone_coordinates_longitude']
 
-    # Plot IMIS locations:
-    fig = go.Figure(go.Scattermap(
-        lat=lat_imis,
-        lon=long_imis,
-        mode='markers',
-        marker=go.scattermap.Marker(
-            size=12,
-            symbol='mountain',
-            color='black'),
-        text=imis_df['hover_text'],
-        hoverinfo='text',
-        hovertemplate="<span class='hover_cursor'>%{text}</span>",
-        customdata=imis_df['data_url'])
-    )
-
     # Plot accident locations:
-    fig.add_trace(go.Densitymap(
+    fig = go.Figure(go.Densitymap(
         lat=lat_acc,
         lon=long_acc,
         z=[1] * len(lat_acc),  # value to calculate the density, adjustable
@@ -126,12 +91,11 @@ def imis_accident_map(altitude):
 
     fig.update_layout(
         map_style="light",
-        map_zoom=6.2,  # Adjust zoom level
-        map_center={"lat": lat_imis.mean(), "lon": long_imis.mean()},  # Center map on the average location
+        map_zoom=6.4,  # Adjust zoom level
+        map_center={"lat": lat_acc.mean(), "lon": long_acc.mean()},  # Center map on the average location
         margin={"r":0,"t":0,"l":0,"b":0}, # Remove margins around the map
         height=250
     )
-    #fig.write_html('imis_stations_and_accidents.html', auto_open=True)
     return fig
 
 """
@@ -260,8 +224,113 @@ def accidents_stats(default_button, temp_button, wind_button, new_snow_button, s
 
 """
 -----------------------------------------------------------------------------------------
-Section 3: ...
+Section 3: Live Weather Data Visualization -> Geo Map (left column)
 """
+
+# Callback to open the station document in a new tab
+@app.callback(
+    Output('url', 'href'),
+    [Input('live_geomap', 'clickData')]
+)
+def open_station_document(clickData):
+    if clickData:
+        # Extract URL from the click data
+        url = clickData['points'][0]['customdata']
+        return url
+    return no_update
+@app.callback(
+    Output('live_geomap', 'figure'),
+    [Input('default_button', 'n_clicks'),
+     Input('temp_button', 'n_clicks'),
+     Input('wind_button', 'n_clicks'),
+     Input('new_snow_button', 'n_clicks'),
+     Input('snow_height_button', 'n_clicks')]
+)
+
+def imis_live_map(default_button, temp_button, wind_button, new_snow_button, snow_height_button):
+    # URL for the IMIS station Details:
+    imis_df['data_url'] = imis_df['code'].apply(lambda code: f"https://stationdocu.slf.ch/pdf/IMIS_{code}_DE.pdf")
+    imis_df['hover_text'] = imis_df.apply(
+        lambda row: f"{row['code']} - {row['station_name']}<br>"
+                    f"Elevation: {row['elevation']} m<br>"
+                    f"(click to open data sheet)", axis=1
+    )
+    # Determine which button was last clicked, or use 'default_button' if none was clicked:
+    ctx = callback_context
+    if not ctx.triggered:
+        button_id = 'default_button'
+    else:
+        button_id = ctx.triggered[0]['prop_id'].split('.')[0]
+
+    lat_imis = imis_df['lat']
+    long_imis = imis_df['lon']
+    day_weather = daily_weather_df.merge(imis_df[['code', 'lon', 'lat']], left_on='code', right_on='code')
+    day_snow = daily_snow_df.merge(imis_df[['code', 'lon', 'lat']], left_on='code', right_on='code')
+
+    # Plot IMIS locations:
+    if button_id == 'default_button':
+        fig = go.Figure(go.Scattermap(
+            lat=lat_imis,
+            lon=long_imis,
+            mode='markers',
+            marker=go.scattermap.Marker(
+                size=12,
+                symbol='mountain',
+                color='black'),
+            text=imis_df['hover_text'],
+            hoverinfo='text',
+            hovertemplate="<span class='hover_cursor'>%{text}</span>",
+            customdata=imis_df['data_url'])
+        )
+
+    # Add heatmap for temperature:
+    elif button_id == 'temp_button':
+        fig = go.Figure(go.Densitymap(
+            lat=day_weather['lat'],
+            lon=day_weather['lon'],
+            z=day_weather['air_temp_daily_mean'],
+            radius=30,  # radius of the density heatmap, adjustable
+            colorscale="RdBu")
+        )
+
+    # Add heatmap for wind:
+    elif button_id == 'wind_button':
+        fig = go.Figure(go.Densitymap(
+            lat=day_weather['lat'],
+            lon=day_weather['lon'],
+            z=day_weather['wind_speed_daily_mean'],
+            radius=30,  # radius of the density heatmap, adjustable
+            colorscale="Viridis")
+        )
+
+    # Add heatmap for snow height:
+    elif button_id == 'snow_height_button':
+        fig = go.Figure(go.Densitymap(
+            lat=day_snow['lat'],
+            lon=day_snow['lon'],
+            z=day_snow['snow_height_daily_mean'],
+            radius=30,  # radius of the density heatmap, adjustable
+            colorscale="Blues")
+        )
+
+    # Add heatmap for new snow:
+    elif button_id == 'new_snow_button':
+        fig = go.Figure(go.Densitymap(
+            lat=day_snow['lat'],
+            lon=day_snow['lon'],
+            z=day_snow['new_snow_daily_mean'],
+            radius=30,  # radius of the density heatmap, adjustable
+            colorscale='gray')
+        )
+
+    fig.update_layout(
+        map_style="light",
+        map_zoom=7,  # Adjust zoom level
+        map_center={"lat": lat_imis.mean(), "lon": long_imis.mean()},  # Center map on the average location
+        margin={"r":0,"t":0,"l":0,"b":0}, # Remove margins around the map
+        height=450
+    )
+    return fig
 
 
 if __name__ == '__main__':

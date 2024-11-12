@@ -25,16 +25,50 @@ Part 2 - Load real-time (daily, dynamic) Data:
 # New data collected every day at 16:00 UTC with '01_API_Load_IMIS_Daily_Data.py'
 def load_measurements():
     measure_df = pd.read_csv('assets/API/daily/04_SLF_daily_imis_measurements_daily.csv', sep=';',skiprows=0)
+    # Extract only relevant columns:
+    measure_df = measure_df[[
+        'station_code', 'date', 'TA_30MIN_MEAN', 'VW_30MIN_MEAN', 'VW_30MIN_MAX' , 'TSS_30MIN_MEAN', 'TS0_30MIN_MEAN',
+    ]].rename(columns={
+        'station_code': 'code',
+        'date': 'date',
+        'TA_30MIN_MEAN': 'air_temp_daily_mean',
+        'VW_30MIN_MEAN': 'wind_speed_daily_mean',
+        'VW_30MIN_MAX': 'wind_speed_daily_max',
+        'TSS_30MIN_MEAN': 'snow_surf_temp_daily_mean',
+        'TS0_30MIN_MEAN': 'snow_ground_temp_daily_mean'
+    })
+
+    # Filter on newest date only:
+    measure_df['date'] = pd.to_datetime(measure_df['date'])
+    latest_date = measure_df['date'].max()
+    measure_df = measure_df[measure_df['date'] == latest_date]
+
     return measure_df
 
 measure_df = load_measurements()
-# print(measure_df.head())
+#print(measure_df.head())
+#print(len(measure_df)) # 202 rows
 
 # 2.2) Load daily IMIS snow data (updated once a day):
 # New data collected every day at 16:00 UTC with '02_API_Load_IMIS_Daily_Snow'
 def load_snow():
     snow_df = pd.read_csv('assets/API/daily/05_SLF_daily_imis_snow_clean.csv', sep=';',skiprows=0)
+    # Extract only relevant columns:
+    snow_df = snow_df[[
+        'station_code', 'measure_date', 'HS', 'HN_1D'
+    ]].rename(columns={
+        'station_code': 'code',
+        'measure_date': 'date',
+        'HS': 'snow_height_daily_mean',
+        'HN_1D': 'new_snow_daily_mean',
+    })
+
+    # Filter on newest date only:
+    snow_df['date'] = pd.to_datetime(snow_df['date'])
+    latest_date = snow_df['date'].max()
+    snow_df = snow_df[snow_df['date'] == latest_date]
     return snow_df
 
 snow_df = load_snow()
-# print(snow_df.head())
+#print(snow_df.head())
+#print(len(snow_df)) # 132 rows
