@@ -26,7 +26,7 @@ jobs:
       run: |
         pip install -r requirements.txt
 
-    - name: Run Duplicate Deletion
+    - name: Run Aggregation to daily data
       working-directory: assets/API/
       run: |
         python 04_Aggregate_to_daily_data.py
