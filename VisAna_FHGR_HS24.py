@@ -5,7 +5,9 @@ import pandas as pd
 import dash_bootstrap_components as dbc
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
-from Data_Loader import load_hist_data, load_imis_stations, load_measurements, load_snow, load_measurements_trend, load_snow_trend
+from Data_Loader import (load_hist_data, load_imis_stations, load_measurements, load_snow,
+                         load_measurements_trend, load_snow_trend,
+                         load_kmeans_training, load_pca_training, load_pca_live, load_kmeans_centers)
 
 acc_df = load_hist_data()
 imis_df = load_imis_stations()
@@ -13,9 +15,12 @@ daily_weather_df = load_measurements()
 daily_snow_df = load_snow()
 trend_measure_df = load_measurements_trend()
 trend_snow_df = load_snow_trend()
+k_means_training_df = load_kmeans_training()
+pca_training_df = load_pca_training()
+pca_live_df = load_pca_live()
+k_centers_df = load_kmeans_centers()
 
 last_update = datetime.fromtimestamp(os.path.getmtime('assets/API/daily/05_SLF_daily_imis_snow_clean.csv')).strftime('%Y-%m-%d-%H:%M')
-
 
 # Create the Dash app:
 app = Dash(__name__, external_stylesheets=[dbc.themes.BOOTSTRAP, '/assets/custom_style.css'])
@@ -53,7 +58,7 @@ app.layout = html.Div([
                                  value=[]),
                     dcc.Graph(id='trend_analysis')
                     ], className='trend_plot'),
-                #dcc.Graph(id='risk_map')
+                dcc.Graph(id='k_cluster_map')
             ], className='live_weather'),
         ], style={'display': 'inline-block'}, className='left_column'),
 
@@ -66,7 +71,7 @@ app.layout = html.Div([
             ]),
             html.H2('Statistics on Accident Data'),
             html.Div([
-                dcc.Graph(id='accidents_stats'),
+                dcc.Graph(id='accidents_stats')
             ], className='training_data'),
         ], style={'display': 'inline-block'}, className='right_column')
     ], className='main_container'),
@@ -431,6 +436,68 @@ def weather_trend(default_button, temp_button, wind_button, new_snow_button, sno
                               legend_title="Station Code",
                               margin={"r": 0, "t": 0, "l": 0, "b": 0},
                               height=300)
+
+    return fig
+
+
+
+"""
+-----------------------------------------------------------------------------------------
+Section 5: Live Weather Data Visualization -> K-Means Clusters / PCA Data (left column)
+"""
+@app.callback(
+    Output('k_cluster_map', 'figure'),
+    [Input('default_button', 'n_clicks')]
+)
+def k_means_clusters(default_button):
+    # Determine which button was last clicked
+    ctx = callback_context
+    if ctx.triggered and len(ctx.triggered) > 0:
+        button_id = ctx.triggered[0]['prop_id'].split('.')[0]
+    else:
+        button_id = 'default_button'
+
+    # Create a scatter plot for the K-Means clusters
+    fig = go.Figure()
+
+    if button_id == 'default_button':
+        # Plot the K-Means clusters, based on PCA data:
+        for cluster in pca_training_df['risk'].unique():
+            pca_data = pca_training_df[pca_training_df['risk'] == cluster]
+            fig.add_trace(go.Scatter(
+                x=pca_data['PCA1'],
+                y=pca_data['PCA2'],
+                mode='markers',
+                marker=dict(size=8),
+                name=f'Risk: {cluster}')
+            )
+
+        # Add the live PCA data from the latest update:
+        fig.add_trace(go.Scatter(
+            x=pca_live_df['PCA1'],
+            y=pca_live_df['PCA2'],
+            mode='markers',
+            marker=dict(size=8, color='black'),
+            name='Live Data')
+        )
+
+        # Add the cluster centers from k_centers_df
+        fig.add_trace(go.Scatter(
+            x=k_centers_df['PCA1'],
+            y=k_centers_df['PCA2'],
+            mode='markers',
+            marker=dict(size=12, color='black', symbol='x'),
+            name='Cluster Centers')
+        )
+
+        # Update layout for better visualization
+        fig.update_layout(
+            title="K-Means Clusters with PCA Data",
+            xaxis_title="Principal Component 1 (PCA1)",
+            yaxis_title="Principal Component 2 (PCA2)",
+            legend_title="Cluster Risk Levels",
+            template="plotly_white"
+        )
 
     return fig
 

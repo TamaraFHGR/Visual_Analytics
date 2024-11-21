@@ -15,10 +15,10 @@ fig.update_xaxes(showticklabels=False)  # Achsenbeschriftungen entfernen
 fig.update_yaxes(showticklabels=False)  # Achsenbeschriftungen entfernen
 fig.update_layout(coloraxis_showscale=True)  # Farbskala anzeigen
 
-# Layout der App
-app.layout = html.Div([
-    dcc.Graph(figure=fig)
-])
+    # Layout der App
+    app.layout = html.Div([
+        dcc.Graph(figure=fig)
+    ])
 
 # Starte die App mit einem benutzerdefinierten Host und Port
 if __name__ == '__main__':

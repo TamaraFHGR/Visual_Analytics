@@ -77,7 +77,7 @@ snow_df = load_snow()
 ------------------------------------------------------------------------------------------------------------------------
 Part 3 - Load historical Trend Data (daily, dynamic):
 """
-# 2.1) Lodad daily IMIS measurement data 2024/25 for trend analysis:
+# 3.1) Lodad daily IMIS measurement data 2024/25 for trend analysis:
 
 def load_measurements_trend():
     trend_measure_df = pd.read_csv('assets/API/daily/04_SLF_daily_imis_measurements_daily.csv', sep=';',skiprows=0)
@@ -99,7 +99,7 @@ def load_measurements_trend():
 trend_measure_df = load_measurements_trend()
 #print(trend_measure_df.head())
 
-# 2.2) Load daily IMIS snow data 2024/25 for trend analysis:
+# 3.2) Load daily IMIS snow data 2024/25 for trend analysis:
 
 def load_snow_trend():
     trend_snow_df = pd.read_csv('assets/API/daily/05_SLF_daily_imis_snow_clean.csv', sep=';',skiprows=0)
@@ -116,3 +116,38 @@ def load_snow_trend():
 
 trend_snow_df = load_snow_trend()
 #print(trend_snow_df.head())
+
+
+"""
+------------------------------------------------------------------------------------------------------------------------
+Part 4 - Load Cluster K-Means Data:
+"""
+
+# 4.1) Load K-Means Clustered Trainings-Data:
+def load_kmeans_training():
+    kmeans_df = pd.read_csv('assets/K-Means_Clustering/01_hist_input_data_k-clustered.csv', sep=',', skiprows=0)
+    return kmeans_df
+
+kmeans_df = load_kmeans_training()
+
+# 4.2) Load PCA Trainings-Data:
+def load_pca_training():
+    pca_df = pd.read_csv('assets/K-Means_Clustering/02_hist_pca_data.csv', sep=',', skiprows=0)
+    return pca_df
+
+pca_training_df = load_pca_training()
+
+# 4.3) Load PCA Live-Data:
+def load_pca_live():
+    pca_live_df = pd.read_csv('assets/API/daily/09_PCA_Live_Data.csv', sep=',', skiprows=0)
+    return pca_live_df
+
+pca_live_df = load_pca_live()
+
+# 4.4) Load K-Means Cluster Centers:
+def load_kmeans_centers():
+    kmeans_centers_df = pd.read_csv('assets/K-Means_Clustering/03_hist_cluster_centers.csv', sep=',', skiprows=0)
+    return kmeans_centers_df
+
+kmeans_centers_df = load_kmeans_centers()
+
