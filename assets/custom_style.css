@@ -1,4 +1,4 @@
-/* Variablen */
+/* Variables */
 :root {
     --font-primary: Arial, sans-serif;
     --font-bold: bold;
@@ -7,6 +7,7 @@
     --font-size-h1: 20px;
     --font-size-h2: 14px;
     --font-size-h3: 12px;
+    --font-size-h4: 18px;
 }
 /* Main Layout */
 .main_container {
@@ -16,20 +17,45 @@
     transform-origin: top left;
 }
 
+/* Header */
+.header {
+    width: 100%;
+    margin: 0;
+    text-align: center;
+    box-sizing: border-box;
+}
+
 /* General Layout */
 .right_column {
     display: flex;
-    width: 45%;
+    width: 40%;
     flex-direction: column;
     gap: var(--main-gap);
+    padding-top: 18px;
     margin-left: var(--main-gap);
 }
 .left_column {
     display: flex;
-    width: 75%;
+    width: 60%;
     flex-direction: column;
     gap: var(--main-gap);
     margin-left: var(--main-gap);
+    border-right: 1px solid #696969FF;
+    padding-right : 10px;
+}
+/* Container for the two cluster graphs */
+.k_cluster_row,
+.weather_row{
+    display: flex;
+    gap: var(--main-gap); /* Optional, for spacing between the graphs */
+}
+
+/* Optional: Styling for the individual graph containers */
+.k_cluster_scatter,
+.k_cluster_matrix,
+.map_graph,
+.trend_graph{
+    width: 48%;  /* Adjust the width as necessary */
 }
 
 /* Buttons Style */
@@ -39,19 +65,11 @@
     justify-content: left;
     margin-left: var(--main-gap);
     margin-top: 24px;
-}
-
-/* Live Weather Graphs */
-.live_weather {
-    display: flex;
-    flex-direction: column;
-    gap: 15px;
-    justify-content: left;
-    margin-left: var(--main-gap);
-    margin-top: 0;
+    padding-bottom: 10px;
 }
 
 /* Training Data Graphs */
+.training_geomap,
 .training_data {
     display: flex;
     flex-direction: column;
@@ -75,8 +93,9 @@ h1, h2, h3, h4, p {
 h1 {
     font-size: var(--font-size-h1);
     font-weight: var(--font-bold);
-    margin: 12px 12px 12px 24px;
     color: blue;
+    margin-left: 20px;
+    margin-top: 12px;
 }
 h2 {
     font-size: var(--font-size-h2);
@@ -87,10 +106,9 @@ h3 {
     font-weight: normal;
 }
 h4 {
-    font-size: var(--font-size-h3);
-    font-weight: var(--font-light);
-    font-style: italic;
-    margin-top: 10px;
+    font-size: var(--font-size-h4);
+    font-weight: normal;
+    color: dimgrey;
 }
 p {
     font-size: var(--font-size-h3);

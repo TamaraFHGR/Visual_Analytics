@@ -73,6 +73,13 @@ snow_df = load_snow()
 #print(snow_df.head())
 #print(len(snow_df)) # 132 rows
 
+# 2.3) Load combined data (measurements and snow data):
+def load_combined():
+    combined_df = pd.read_csv('assets/API/daily/06_SLF_daily_imis_all_live_data.csv', sep=';',skiprows=0)
+    return combined_df
+
+combined_df = load_combined()
+
 """
 ------------------------------------------------------------------------------------------------------------------------
 Part 3 - Load historical Trend Data (daily, dynamic):
@@ -139,7 +146,8 @@ pca_training_df = load_pca_training()
 
 # 4.3) Load PCA Live-Data:
 def load_pca_live():
-    pca_live_df = pd.read_csv('assets/API/daily/09_PCA_Live_Data.csv', sep=',', skiprows=0)
+    pca_live_df = pd.read_csv('assets/API/daily/09_PCA_Live_Data.csv', sep=',', skiprows=0, quotechar='"')
+    pca_live_df['station_code'] = pca_live_df['station_code'].str.strip()
     return pca_live_df
 
 pca_live_df = load_pca_live()
