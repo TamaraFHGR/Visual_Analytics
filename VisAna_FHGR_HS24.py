@@ -72,7 +72,7 @@ app.layout = html.Div([
                         options=[{'label': combined, 'value': code}
                                  for combined, code in zip(imis_df['combined'], imis_df['code'])],
                         multi=True,
-                        placeholder="Select IMIS-Stations...",
+                        placeholder="Select any IMIS-Stations...",
                         value=[])
                 ], className='station_dropdown'),
             ], className='sub_header'),
