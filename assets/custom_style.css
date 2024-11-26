@@ -12,9 +12,10 @@
 /* Main Layout */
 .main_container {
     display: flex;
-    width: 120%;
-    transform: scale(0.8);
+    width: 100%;
+    transform: scale(0.98);
     transform-origin: top left;
+    margin: 0;
 }
 
 /* Header */
@@ -23,12 +24,13 @@
     margin: 0;
     text-align: center;
     box-sizing: border-box;
+
 }
 
 /* General Layout */
 .right_column {
     display: flex;
-    width: 40%;
+    width: 30%;
     flex-direction: column;
     gap: var(--main-gap);
     padding-top: 18px;
@@ -36,7 +38,7 @@
 }
 .left_column {
     display: flex;
-    width: 60%;
+    width: 70%;
     flex-direction: column;
     gap: var(--main-gap);
     margin-left: var(--main-gap);

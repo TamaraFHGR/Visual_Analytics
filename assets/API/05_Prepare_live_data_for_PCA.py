@@ -1,10 +1,4 @@
 import pandas as pd
-import numpy as np
-from sklearn.preprocessing import StandardScaler
-from sklearn.cluster import KMeans
-from sklearn.decomposition import PCA
-import plotly.express as px
-import plotly.graph_objects as go
 
 live_measure_df = pd.read_csv('daily/04_SLF_daily_imis_measurements_daily.csv', sep=';', skiprows=0)
 live_snow_df = pd.read_csv('daily/05_SLF_daily_imis_snow_clean.csv', sep=';', skiprows=0)
