@@ -5,42 +5,63 @@ import pandas as pd
 import numpy as np
 import dash_bootstrap_components as dbc
 import plotly.graph_objects as go
+from jedi.api.refactoring import inline
 from plotly.subplots import make_subplots
-from Data_Loader import (load_hist_data, load_imis_stations, load_measurements, load_snow, load_combined,
-                         load_measurements_trend, load_snow_trend,
-                         load_kmeans_training, load_pca_training, load_pca_live, load_kmeans_centers)
-
-# Load the data:
-acc_df = load_hist_data()
+from Data_Loader import (load_imis_stations, load_hist_data, load_daily,
+                         load_kmeans_centers, load_pca_training, load_pca_live)
+"""
+-------------------------------------------------------------------------------------------------------------------
+-> Load Data:
+"""
 imis_df = load_imis_stations()
-daily_weather_df = load_measurements()
-daily_snow_df = load_snow()
-daily_combined_df = load_combined()
-trend_measure_df = load_measurements_trend()
-trend_snow_df = load_snow_trend()
-k_means_training_df = load_kmeans_training()
+acc_df = load_hist_data()
+daily_snow_df = load_daily()
+k_centers_df = load_kmeans_centers()
 pca_training_df = load_pca_training()
 pca_live_df = load_pca_live()
-k_centers_df = load_kmeans_centers()
-
-# Define color map for the K-Means clusters:
-color_map = {0: 'orange', #3 - moderate risk
-             1: 'lightcoral', #4 - considerable risk
-             2: 'yellow', #2 - low risk
-             3: 'lightgreen', #1 - very low risk
-             4: 'darkred'} #5 - high risk
-
 last_update = datetime.fromtimestamp(os.path.getmtime('assets/API/daily/05_SLF_daily_imis_snow_clean.csv')).strftime('%Y-%m-%d-%H:%M')
-
-# Combined filter values for IMIS stations:
+"""
+-------------------------------------------------------------------------------------------------------------------
+-> Define filters:
+"""
 imis_df['combined'] = (
     imis_df['canton_code'].fillna('') + ' - ' +
     imis_df['code'].fillna('') + ' - ' +
     imis_df['station_name'].fillna('') + ' - ' +
     imis_df['elevation'].fillna(0).astype(int).astype(str) + ' m'
 )
+station_filter = imis_df['combined'].unique()
+#print(station_filter)
 
-# Create the Dash app:
+all_regions = {
+    'Entire Alpine Region': ['BE', 'FR', 'VD', 'TI', 'VS', 'OW', 'SZ', 'UR', 'FL', 'GL', 'GR', 'SG'],
+    'Western Alps': ['BE', 'FR', 'VD'],
+    'Southern Alps': ['TI', 'VS'],
+    'Central Alps': ['OW', 'SZ', 'UR'],
+    'Eastern Alps': ['FL', 'GL', 'GR', 'SG'],
+}
+
+button_ids = ['default_button', 'temp_button', 'wind_button', 'snow_height_button', 'new_snow_button']
+
+color_map = {0: 'orange', #3 - moderate risk
+             1: 'lightcoral', #4 - considerable risk
+             2: 'yellow', #2 - low risk
+             3: 'lightgreen', #1 - very low risk
+             4: 'darkred'} #5 - high risk
+
+month_mapping = {
+    0: 10,  # October
+    1: 11,  # November
+    2: 12,  # December
+    3: 1,  # January
+    4: 2,  # February
+    5: 3,  # March
+    6: 4  # April
+}
+"""
+-------------------------------------------------------------------------------------------------------------------
+-> Create Dash App:
+"""
 app = Dash(__name__, external_stylesheets=[dbc.themes.BOOTSTRAP, '/assets/custom_style.css'])
 
 app.layout = html.Div([
@@ -48,106 +69,576 @@ app.layout = html.Div([
     dcc.Location(id='url', refresh=True),
     html.Div(id='selected-url', style={'display': 'none'}),
 
-    # Header:
-    html.Div([
-        html.H1('Visual Analytics Tool on Snow Avalanches'),
+    # State Storage for Active Button
+    dcc.Store(id='active_button', data='default_button'),
+
+    # Title:
+    html.Div([ # header
+        html.H1('Visual Analytics on Avalanche Accidents and Snow Conditions'),
+        html.H3(f'(last Update: {last_update})')
     ], className='header'),
 
     # Column 1 of 2 (left):
     html.Div([
-        html.Div([
-            html.Div([
-                html.H3(f'Last Update: {last_update}', style={'color': 'grey'}),
-                html.H4('Current Snow and Weather Conditions in the Swiss Alps'),
-                html.Div([
-                    html.Button('Stations', id='default_button', n_clicks=0),
-                    html.Button('Temperature', id='temp_button', n_clicks=0),
-                    html.Button('Wind', id='wind_button', n_clicks=0),
-                    html.Button('Snow Height', id='snow_height_button', n_clicks=0),
-                    html.Button('New Snow', id='new_snow_button', n_clicks=0)
+        html.Div([ # left_column
+            html.Div([ # sub_header
+                html.Div([ # weather_buttons
+                    html.Button('Station Overview', id='default_button', n_clicks=0, className='active'),
+                    html.Button('Temperature', id='temp_button', n_clicks=0, className=''),
+                    html.Button('Wind', id='wind_button', n_clicks=0, className=''),
+                    html.Button('Snow Height', id='snow_height_button', n_clicks=0, className=''),
+                    html.Button('New Snow', id='new_snow_button', n_clicks=0, className=''),
                 ], className='weather_buttons'),
-                html.Div([
+                html.Div([ # radio_group
+                    html.Hr(),
+                    dcc.RadioItems(
+                        id='region_radio',
+                        options=[{'label': region, 'value': region} for region in all_regions.keys()],
+                        value='Entire Alpine Region',
+                        inline=True,
+                        className='region_radio'),
+                    dcc.RadioItems(
+                        id='canton_radio',
+                        options=[],
+                        value='None',
+                        inline=True,
+                        className='canton_radio'),
+                ], className='radio_group'),
+                html.Div([ # station_dropdown
                     dcc.Dropdown(
                         id='station_dropdown',
                         options=[{'label': combined, 'value': code}
                                  for combined, code in zip(imis_df['combined'], imis_df['code'])],
                         multi=True,
-                        placeholder="Select any IMIS-Stations...",
+                        placeholder="Select any weather station...",
                         value=[])
-                ], className='station_dropdown'),
+                    ], className='station_dropdown'),
             ], className='sub_header'),
 
             # Live Weather Data and Trend:
-            html.Div([
-                html.Div([
-                    html.H2('Live Weather Monitoring'),
-                    dcc.Graph(id='live_geomap')], className='map_graph'),
-                html.Div([
-                    html.H2('Weather Trend Analysis'),
-                    dcc.Dropdown(id='moving_avg_window',
-                                 options=[
-                                    {'label': '3 Days', 'value': 3},
-                                    {'label': '5 Days', 'value': 5},
-                                    {'label': '7 Days', 'value': 7},
-                                    {'label': '10 Days', 'value': 10}],
-                                 value=7,
-                                 clearable=False),
-                    dcc.Graph(id='trend_analysis')], className='trend_graph')
-                ], className='weather_row'),
+            html.Div([ # weather_row
+                html.Div([ # map_graph
+                    html.H2('Snow and Weather Monitoring'),
+                    dcc.Graph(id='live_geomap')
+                ], className='map_graph'),
+                html.Div([ # trend_graph
+                    html.H2('Trend Analysis'),
+                    dcc.Graph(id='trend_analysis'),
+                    dcc.Slider(
+                        id='moving_avg_window',
+                        min=3,
+                        max=9,
+                        step=None,
+                        value=7,
+                        marks={3: '3 Days', 5: '5 Days', 7: '7 Days', 9: '9 Days'},
+                        tooltip={"placement": "bottom", "always_visible": False}
+                    )
+                ], className='trend_graph')
+            ], className='weather_row'),
 
             # Risk Assessment Clusters and Matrix:
             html.Div([
-                html.Div([
-                    html.H2('Risk-Assessment Clustering'),
+                html.Div([ # k_cluster_scatter
+                    html.H2('Daily Risk Clustering)'),
+                    dcc.Graph(id='k_cluster_map'),
                     dcc.Dropdown(
                         id='date_dropdown',
                         options=[{'label': date, 'value': date} for date in sorted(pca_live_df['measure_date'].unique())],
                         placeholder="Select a Measure Date...",
-                        value=pca_live_df['measure_date'].max()
-                    ),
-                    dcc.Graph(id='k_cluster_map')], className='k_cluster_scatter'),
-                html.Div([
+                        value=pca_live_df['measure_date'].max())
+                    ], className='k_cluster_scatter'),
+                html.Div([ # k_cluster_matrix
                     html.H2('Risk-Assessment Matrix'),
-                    dcc.Dropdown(
-                        id='region_dropdown',
-                        options=[{'label': region, 'value': region} for region in
-                                 sorted(pca_live_df['alpine_region'].unique())],
-                        placeholder="Select an Alpine Region...",
-                        value=pca_live_df['alpine_region'].unique()[0]
-                    ),
-                    dcc.Graph(id='cluster_matrix')], className='k_cluster_matrix')
+                    dcc.Graph(id='cluster_matrix'),
+                    dcc.Slider(
+                        id='month_slider',
+                        min=0,
+                        max=6,
+                        step=None,
+                        value=2,
+                        marks={0: 'Oct 24',
+                               1: 'Nov 24',
+                               2: 'Dec 24',
+                               3: 'Jan 25',
+                               4: 'Feb 25',
+                               5: 'Mar 25',
+                               6: 'Apr 25'},
+                        tooltip={"placement": "bottom", "always_visible": False})
+                    ], className='k_cluster_matrix'),
                 ], className='k_cluster_row'),
         ], style={'display': 'inline-block'}, className='left_column'),
 
         # Column 2 of 2 (right):
-        html.Div([
-            html.H4('Historical Avalanche Observations'),
-            html.Div([
-                html.H2('Avalanche Accident Data since 1998'),
+        html.Div([ # right_column
+            html.Div([ # training_map
+                html.H2('Historical Avalanche Accident since 1998'),
+                dcc.Graph(id='training_geomap'),
                 dcc.RangeSlider(id='altitude', min=1000, max=4000, step=500),
-                dcc.Graph(id='training_geomap')
-            ], className='hover_cursor'),
-            html.Div([
-                html.H2('Statistics on Accident Data'),
+            ], className='training_map'),
+            html.Div([ # training_data
                 dcc.Graph(id='accidents_stats')
             ], className='training_data'),
         ], style={'display': 'inline-block'}, className='right_column')
     ], className='main_container')
     ])
 
+"""
+-------------------------------------------------------------------------------------------------------------------
+-> Update Filter and Buttons:
+"""
+# Update Radio Button for Cantons:
+@app.callback(
+    Output('canton_radio', 'options'),
+    Input('region_radio', 'value')
+)
+def update_canton_radio(selected_region):
+    if selected_region:
+        canton_codes = all_regions[selected_region]
+        return [{'label': 'All Cantons', 'value': 'None'}] + [
+            {'label': canton, 'value': canton} for canton in canton_codes
+        ]
+    else:
+        return [{'label': 'All Cantons', 'value': 'None'}]
+
+# Update Dropdown Menu for IMIS-Stations:
+@app.callback(
+    Output('station_dropdown', 'options'),
+    [Input('region_radio', 'value'),
+    Input('canton_radio', 'value')]
+)
+def update_station_dropdown(selected_region, selected_canton):
+    filtered_df = imis_df.copy()
+    # Filter by Alpine Region:
+    if selected_region and selected_region != 'Entire Alpine Region':
+        valid_regions = all_regions.get(selected_region, [])
+        filtered_df = filtered_df[filtered_df['canton_code'].isin(valid_regions)]
+
+    # Filter by Canton:
+    if selected_canton and selected_canton != 'None':
+        filtered_df = filtered_df[filtered_df['canton_code'] == selected_canton]
+
+    options = [{'label': combined, 'value': code}
+               for combined, code in zip(filtered_df['combined'], filtered_df['code'])]
+
+    return options
+
+# Update the stored active button in dcc.Store:
+@app.callback(
+    Output('active_button', 'data'),
+    [Input(button_id, 'n_clicks') for button_id in button_ids],
+    prevent_initial_call=True
+)
+def store_active_button(*args):
+    ctx = callback_context
+    if not ctx.triggered:
+        return 'default_button'
+
+    clicked_button = ctx.triggered[0]['prop_id'].split('.')[0]
+    return clicked_button
+
+# Update the button classes (active/inactive):
+@app.callback(
+    [Output(button_id, 'className') for button_id in button_ids],
+    Input('active_button', 'data')
+)
+def update_button_classes(active_button):
+    return ['active' if button_id == active_button else '' for button_id in button_ids]
+
+# Callback to open the station document in a new tab:
+@app.callback(
+    Output('url', 'href'),
+    [Input('live_geomap', 'clickData')]
+)
+def open_station_document(clickData):
+    if clickData:
+        # Extract URL from the click data
+        url = clickData['points'][0]['customdata']
+        return url
+    return no_update
 
 """
 -----------------------------------------------------------------------------------------
-Section 1: Training Data Visualization -> Geo Map (right column)
+Section 1.1: left column - Map Visualization
+"""
+@app.callback(
+    Output('live_geomap', 'figure'),
+    [Input('active_button', 'data'),
+     Input('region_radio', 'value'),
+     Input('canton_radio', 'value'),
+     Input('station_dropdown', 'value')],
+)
+def imis_live_map(active_button, selected_region, selected_canton, selected_stations):
+    filtered_data = imis_df.copy()
+    # URL for the IMIS station Details:
+    filtered_data['data_url'] = filtered_data['code'].apply(lambda code: f"https://stationdocu.slf.ch/pdf/IMIS_{code}_DE.pdf")
+
+    # a) Filter data based on selected region:
+    if selected_region and selected_region != 'Entire Alpine Region':
+        valid_regions = all_regions.get(selected_region, [])
+        filtered_data = filtered_data[filtered_data['canton_code'].isin(valid_regions)]
+
+    # b) Filter data based on selected canton:
+    if selected_canton and selected_canton != 'None':
+        filtered_data = filtered_data[filtered_data['canton_code'] == selected_canton]
+
+    # c) Filter data based on selected stations:
+    if selected_stations:
+        filtered_data = filtered_data[filtered_data['code'].isin(selected_stations)]
+
+    # Plot IMIS locations as "Station Overview":
+    if active_button == 'default_button':
+        fig = go.Figure(go.Scattermap(
+            lat=filtered_data['lat'],
+            lon=filtered_data['lon'],
+            mode='markers',
+            marker=go.scattermap.Marker(
+                size=12,
+                symbol='mountain',
+                color='black'),
+            text=filtered_data['combined'],
+            hoverinfo='text',
+            customdata=filtered_data['data_url'])
+        )
+        fig.update_layout(
+            map_style="light",
+            map_zoom=6,
+            map_center={"lat": filtered_data['lat'].mean(), "lon": filtered_data['lon'].mean()},
+            margin={"r": 0, "t": 0, "l": 0, "b": 0},
+            height=230
+        )
+
+    # Plot Heat Map "Temperature":
+    elif active_button == 'temp_button':
+        daily_snow = daily_snow_df[daily_snow_df['measure_date'] == daily_snow_df['measure_date'].max()]
+        fig = go.Figure(go.Densitymap(
+            lat=daily_snow['lat'],
+            lon=daily_snow['lon'],
+            z=daily_snow['air_temp_mean_stations'],
+            radius=30,
+            colorscale='blugrn',
+            reversescale=True)
+        )
+        fig.update_layout(
+            map_style="light",
+            map_zoom=6,
+            map_center={"lat": daily_snow['lat'].mean(), "lon": daily_snow['lon'].mean()},
+            margin={"r": 0, "t": 0, "l": 0, "b": 0},
+            height=230
+        )
+
+    # Plot Heat Map "Wind":
+    elif active_button == 'wind_button':
+        daily_snow = daily_snow_df[daily_snow_df['measure_date'] == daily_snow_df['measure_date'].max()]
+        fig = go.Figure(go.Densitymap(
+            lat=daily_snow['lat'],
+            lon=daily_snow['lon'],
+            z=daily_snow['wind_speed_max_stations'],
+            radius=30,
+            colorscale='brwnyl',
+            reversescale=False)
+        )
+        fig.update_layout(
+            map_style="light",
+            map_zoom=6,
+            map_center={"lat": daily_snow['lat'].mean(), "lon": daily_snow['lon'].mean()},
+            margin={"r": 0, "t": 0, "l": 0, "b": 0},
+            height=230
+        )
+
+    # Plot Heat Map "Snow Height":
+    elif active_button == 'snow_height_button':
+        daily_snow = daily_snow_df[daily_snow_df['measure_date'] == daily_snow_df['measure_date'].max()]
+        fig = go.Figure(go.Densitymap(
+            lat=daily_snow['lat'],
+            lon=daily_snow['lon'],
+            z=daily_snow['snow_height_mean_stations'],
+            radius=30,
+            colorscale='blues',
+            reversescale=False)
+        )
+        fig.update_layout(
+            map_style="light",
+            map_zoom=6,
+            map_center={"lat": daily_snow['lat'].mean(), "lon": daily_snow['lon'].mean()},
+            margin={"r": 0, "t": 0, "l": 0, "b": 0},
+            height=230
+        )
+
+    # Plot Heat Map "New Snow":
+    elif active_button == 'new_snow_button':
+        daily_snow = daily_snow_df[daily_snow_df['measure_date'] == daily_snow_df['measure_date'].max()]
+        fig = go.Figure(go.Densitymap(
+            lat=daily_snow['lat'],
+            lon=daily_snow['lon'],
+            z=daily_snow['new_snow_mean_stations'],
+            radius=30,
+            colorscale='dense',
+            reversescale=False)
+        )
+        fig.update_layout(
+            map_style="light",
+            map_zoom=6,
+            map_center={"lat": daily_snow['lat'].mean(), "lon": daily_snow['lon'].mean()},
+            margin={"r": 0, "t": 0, "l": 0, "b": 0},
+            height=230
+        )
+
+    return fig
+
+
+"""
+-----------------------------------------------------------------------------------------
+Section 1.2: left column - Trend Visualization
+"""
+@app.callback(
+    Output('trend_analysis', 'figure'),
+    [Input('active_button', 'data'),
+     Input('region_radio', 'value'),
+     Input('canton_radio', 'value'),
+     Input('station_dropdown', 'value'),
+     Input('moving_avg_window', 'value')],
+)
+def weather_trend(active_button, selected_region, selected_canton, selected_stations, moving_window):
+    # Filter data based on region, canton, and station
+    filtered_data = daily_snow_df.copy()
+
+    if selected_region and selected_region != 'Entire Alpine Region':
+        valid_regions = all_regions.get(selected_region, [])
+        filtered_data = filtered_data[filtered_data['canton_code'].isin(valid_regions)]
+
+    if selected_canton and selected_canton != 'None':
+        filtered_data = filtered_data[filtered_data['canton_code'] == selected_canton]
+
+    if selected_stations:
+        filtered_data = filtered_data[filtered_data['station_code'].isin(selected_stations)]
+
+    # Function to calculate mean for any given value column
+    def calculate_mean(df, value_column):
+        return df.groupby('measure_date')[value_column].mean()
+
+    # Function to plot the trend data
+    def plot_trend(df, value_column, y_axis_label, is_bar=False, with_moving_avg=False):
+        mean_data = calculate_mean(df, value_column)
+
+        if with_moving_avg:
+            moving_avg = mean_data.rolling(window=moving_window, min_periods=1).mean()
+            fig.add_trace(go.Scatter(x=mean_data.index, y=mean_data.values, mode='lines', name=y_axis_label))
+            fig.add_trace(go.Scatter(x=moving_avg.index, y=moving_avg.values, mode='lines', line=dict(dash='dash'),
+                                     name=f'{moving_window}-Day Moving Average'))
+        else:
+            fig.add_trace(go.Scatter(x=mean_data.index, y=mean_data.values, mode='lines', name=y_axis_label))
+
+        if is_bar:
+            fig.add_trace(go.Bar(x=mean_data.index, y=mean_data.values, name=y_axis_label))
+
+    # Function to plot individual station trends
+    def plot_station_trends(df, value_column, y_axis_label):
+        if selected_stations:  # Only plot individual stations if selected stations exist
+            for station in selected_stations:
+                station_data = df[df['station_code'] == station]
+                fig.add_trace(go.Scatter(x=station_data['measure_date'], y=station_data[value_column], mode='lines',
+                                         name=f"{station}"))
+                moving_avg = station_data[value_column].rolling(window=moving_window, min_periods=1).mean()
+                fig.add_trace(
+                    go.Scatter(x=station_data['measure_date'], y=moving_avg, mode='lines', line=dict(dash='dash'),
+                               name=f"{station} ({moving_window}-day MA)"))
+        else:  # Plot aggregated data if no stations are selected
+            plot_trend(df, value_column, y_axis_label, with_moving_avg=True)
+
+    fig = go.Figure()
+
+    # Handle the active button conditions
+    if active_button == 'default_button':
+        plot_trend(filtered_data, 'air_temp_mean_stations', 'Mean Temperature [°C]', with_moving_avg=False)
+        plot_trend(filtered_data, 'wind_speed_max_stations', 'Mean Wind Speed [m/s]', with_moving_avg=False)
+        plot_trend(filtered_data, 'snow_height_mean_stations', 'Mean Snow Height [cm]', is_bar=True,
+                   with_moving_avg=False)
+        plot_trend(filtered_data, 'new_snow_mean_stations', 'Mean New Snow [cm]', is_bar=True, with_moving_avg=False)
+
+    elif active_button == 'temp_button':
+        plot_station_trends(filtered_data, 'air_temp_mean_stations', "Air Temperature [°C]")
+    elif active_button == 'wind_button':
+        plot_station_trends(filtered_data, 'wind_speed_max_stations', "Wind Speed [m/s]")
+    elif active_button == 'snow_height_button':
+        plot_station_trends(filtered_data, 'snow_height_mean_stations', "Height of Snowpack [cm]")
+    elif active_button == 'new_snow_button':
+        plot_station_trends(filtered_data, 'new_snow_mean_stations', "Height of New Snow [cm]")
+
+    # Update layout
+    fig.update_layout(
+        margin={"r": 0, "t": 0, "l": 0, "b": 0},
+        template="plotly_white",
+        height=200
+    )
+
+    return fig
+
+
+"""
+-----------------------------------------------------------------------------------------
+Section 2.1: left column - Risk Clustering (PCA)
+"""
+@app.callback(
+    Output('k_cluster_map', 'figure'),
+         Input('date_dropdown', 'value')
+)
+def k_means_clusters(selected_date):
+    if selected_date:
+        filtered_pca_live_df = pca_live_df[pca_live_df['measure_date'] == selected_date]
+    else:
+        filtered_pca_live_df = pca_live_df[pca_live_df['measure_date'] == pca_live_df['measure_date'].max()]
+
+    # Plot the K-Means clusters, based on PCA data:
+    fig = go.Figure()
+    for cluster in pca_training_df['k_cluster'].unique():
+        pca_data = pca_training_df[pca_training_df['k_cluster'] == cluster]
+        cluster_color = color_map.get(cluster, 'gray')  # Default to gray if not found in color_map
+
+        fig.add_trace(go.Scatter(
+            x=pca_data['PCA1'],
+            y=pca_data['PCA2'],
+            mode='markers',
+            marker=dict(size=4, color=cluster_color, opacity=0.7),
+            name=f'Risk: {cluster}',
+            showlegend=False)
+        )
+
+        # Add the live PCA data from the latest update:
+        fig.add_trace(go.Scatter(
+            x=filtered_pca_live_df['PCA1'],
+            y=filtered_pca_live_df['PCA2'],
+            mode='markers',
+            marker=dict(size=4, color='black', opacity=0.7),
+            name='Live Data',
+            showlegend=False)
+        )
+
+        # Add the cluster centers from k_centers_df
+        fig.add_trace(go.Scatter(
+            x=k_centers_df['PCA1'],
+            y=k_centers_df['PCA2'],
+            mode='markers',
+            marker=dict(size=8, color='darkblue', symbol='x'),
+            name='Cluster Centers',
+            showlegend=False)
+        )
+
+        # Update layout for better visualization
+        fig.update_layout(
+            xaxis_title="PCA-1",
+            yaxis_title="PCA-2",
+            template="plotly_white",
+            height=200,
+            margin={"r": 0, "t": 0, "l": 0, "b": 0}
+        )
+
+    return fig
+"""
+-----------------------------------------------------------------------------------------
+Section 2.2: left column - Risk Assessment Matrix
 """
 
-# Callback to update the training data map based on the selected altitude range
+@app.callback(
+    Output('cluster_matrix', 'figure'),
+    [Input('region_radio', 'value'),
+     Input('canton_radio', 'value'),
+     Input('month_slider', 'value')]
+)
+def update_cluster_matrix(selected_region, selected_canton, selected_month_idx):
+    filtered_data = pca_live_df.copy()
+
+    if not np.issubdtype(filtered_data['measure_date'].dtype, np.datetime64):
+        filtered_data['measure_date'] = pd.to_datetime(filtered_data['measure_date'], errors='coerce')
+
+    if selected_region and selected_region != 'Entire Alpine Region':
+        valid_regions = all_regions.get(selected_region, [])
+        filtered_data = filtered_data[filtered_data['canton_code'].isin(valid_regions)]
+
+    if selected_canton and selected_canton != 'None':
+        filtered_data = filtered_data[filtered_data['canton_code'] == selected_canton]
+        group_by_column = 'station_code'
+    else:
+        group_by_column = 'canton_code'
+
+    if selected_month_idx is not None:
+        selected_month = month_mapping[selected_month_idx]
+        filtered_data = filtered_data[filtered_data['measure_date'].dt.month == month_mapping[selected_month_idx]]
+
+    # Create a matrix of k_cluster values for each station and measure date
+    aggregated_data = filtered_data.groupby([group_by_column, 'measure_date'])['k_cluster'].mean().reset_index()
+    y_values = aggregated_data[group_by_column].unique()
+    measure_dates = aggregated_data['measure_date'].unique()
+    y_idx_map = {value: idx for idx, value in enumerate(y_values)}
+    date_idx_map = {date: idx for idx, date in enumerate(measure_dates)}
+
+    # Add Values:
+    cluster_matrix = np.full((len(y_values), len(measure_dates)), np.nan)
+    for _, row in aggregated_data.iterrows():
+        i = y_idx_map[row[group_by_column]]
+        j = date_idx_map[row['measure_date']]
+        cluster_matrix[i, j] = row['k_cluster']
+
+    # Umwandlung der Cluster-Matrix in Farbcodes, mit Bedingung für NaN-Werte:
+    def get_color(cluster_value):
+        if np.isnan(cluster_value):
+            return 'white'
+        else:
+            return color_map.get(int(cluster_value), 'white')
+
+    color_matrix = np.vectorize(get_color)(cluster_matrix)
+
+    fig = go.Figure(data=go.Heatmap(
+        z=cluster_matrix,
+        x=measure_dates,
+        y=y_values,
+        colorscale=[[0, 'white'], [1, 'white']],
+        showscale=False,
+        hovertemplate="Cluster: %{z}",
+    ))
+
+    for i in range(len(y_values)):
+        for j in range(len(measure_dates)):
+            if color_matrix[i, j] != 'white':
+                fig.add_trace(go.Scatter(
+                    x=[measure_dates[j]], y=[y_values[i]], mode='markers',
+                    marker=dict(size=8, color=color_matrix[i, j], opacity=1),
+                    showlegend=False
+                ))
+
+    # Add custom legend:
+    sorted_clusters = [
+        (3, "1 - very low risk", "lightgreen"),
+        (2, "2 - low risk", "yellow"),
+        (0, "3 - moderate risk", "orange"),
+        (1, "4 - considerable risk", "lightcoral"),
+        (4, "5 - high risk", "darkred")
+    ]
+
+    for k_value, label, color in sorted_clusters:
+        fig.add_trace(go.Scatter(
+            x=[None], y=[None], mode='markers',
+            marker=dict(size=10, color=color),
+            name=label
+        ))
+
+    fig.update_layout(
+        template="plotly_white",
+        height=200,
+        margin={"r": 0, "t": 0, "l": 0, "b": 0},
+    )
+    return fig
+
+
+
+"""
+-----------------------------------------------------------------------------------------
+Section 3.1: right column - Training Map
+"""
 @app.callback(
     Output('training_geomap', 'figure'),
     [Input('altitude', 'value')]
 )
 def imis_accident_map(altitude):
-    # filter data by altitude:
     if altitude:
         min_altitude, max_altitude = altitude
         filtered_acc_df = acc_df[(acc_df['start_zone_elevation'] >= min_altitude) & (acc_df['start_zone_elevation'] <= max_altitude)]
@@ -178,8 +669,9 @@ def imis_accident_map(altitude):
 
 """
 -----------------------------------------------------------------------------------------
-Section 2: Training Data Visualization -> Accident Statistics (right column)
+Section 3.2: right column - Training Data 
 """
+
 
 @app.callback(
     Output('accidents_stats', 'figure'),
@@ -300,399 +792,8 @@ def accidents_stats(default_button, temp_button, wind_button, new_snow_button, s
 
     return fig
 
-"""
------------------------------------------------------------------------------------------
-Section 3: Live Weather Data Visualization -> Geo Map (left column)
-"""
-
-# Callback to open the station document in a new tab
-@app.callback(
-    Output('url', 'href'),
-    [Input('live_geomap', 'clickData')]
-)
-def open_station_document(clickData):
-    if clickData:
-        # Extract URL from the click data
-        url = clickData['points'][0]['customdata']
-        return url
-    return no_update
-
-@app.callback(
-    Output('live_geomap', 'figure'),
-    [Input('default_button', 'n_clicks'),
-     Input('temp_button', 'n_clicks'),
-     Input('wind_button', 'n_clicks'),
-     Input('new_snow_button', 'n_clicks'),
-     Input('snow_height_button', 'n_clicks')],
-)
-def imis_live_map(default_button, temp_button, wind_button, new_snow_button, snow_height_button):
-    # URL for the IMIS station Details:
-    imis_df['data_url'] = imis_df['code'].apply(lambda code: f"https://stationdocu.slf.ch/pdf/IMIS_{code}_DE.pdf")
-    imis_df['hover_text'] = imis_df.apply(
-        lambda row: f"{row['code']} - {row['station_name']}<br>"
-                    f"Elevation: {row['elevation']} m<br>"
-                    f"(click to open data sheet)", axis=1
-    )
-
-    # Determine which button was last clicked, or use 'default_button' if none was clicked:
-    ctx = callback_context
-    button_id = 'default_button'  # Default fallback
-
-    if ctx.triggered:
-        trigger = ctx.triggered[0]['prop_id'].split('.')[0]
-        if trigger in ['default_button', 'temp_button', 'wind_button', 'new_snow_button', 'snow_height_button']:
-            button_id = trigger
-
-    lat_imis = imis_df['lat']
-    long_imis = imis_df['lon']
-    day_weather = daily_weather_df.merge(imis_df[['code', 'lon', 'lat']], left_on='code', right_on='code')
-    day_snow = daily_snow_df.merge(imis_df[['code', 'lon', 'lat']], left_on='code', right_on='code')
-
-    # Plot IMIS locations:
-    if button_id == 'default_button':
-        fig = go.Figure(go.Scattermap(
-            lat=lat_imis,
-            lon=long_imis,
-            mode='markers',
-            marker=go.scattermap.Marker(
-                size=12,
-                symbol='mountain',
-                color='black'),
-            text=imis_df['hover_text'],
-            hoverinfo='text',
-            hovertemplate="<span class='hover_cursor'>%{text}</span>",
-            customdata=imis_df['data_url'])
-        )
-
-    # Add heatmap for temperature:
-    elif button_id == 'temp_button':
-        fig = go.Figure(go.Densitymap(
-                lat=day_weather['lat'],
-                lon=day_weather['lon'],
-                z=day_weather['air_temp_daily_mean'],
-                radius=30,  # radius of the density heatmap, adjustable
-                colorscale='blugrn',
-                reversescale=True)
-            )
-
-    # Add heatmap for wind:
-    elif button_id == 'wind_button':
-        fig = go.Figure(go.Densitymap(
-            lat=day_weather['lat'],
-            lon=day_weather['lon'],
-            z=day_weather['wind_speed_daily_mean'],
-            radius=30,  # radius of the density heatmap, adjustable
-            colorscale='brwnyl')
-        )
-
-    # Add heatmap for snow height:
-    elif button_id == 'snow_height_button':
-        fig = go.Figure(go.Densitymap(
-            lat=day_snow['lat'],
-            lon=day_snow['lon'],
-            z=day_snow['snow_height_daily_mean'],
-            radius=30,  # radius of the density heatmap, adjustable
-            colorscale='blues')
-        )
-
-    # Add heatmap for new snow:
-    elif button_id == 'new_snow_button':
-        fig = go.Figure(go.Densitymap(
-            lat=day_weather['lat'],
-            lon=day_weather['lon'],
-            z=day_snow['new_snow_daily_mean'],
-            radius=30,  # radius of the density heatmap, adjustable
-            colorscale='dense',
-            showscale=True)
-        )
-
-    fig.update_layout(
-        map_style="light",
-        map_zoom=6,  # Adjust zoom level
-        map_center={"lat": lat_imis.mean(), "lon": long_imis.mean()},  # Center map on the average location
-        margin={"r":0,"t":0,"l":0,"b":0}, # Remove margins around the map
-        height=270
-    )
-    return fig
 
 
-
-"""
------------------------------------------------------------------------------------------
-Section 4: Live Weather Data Visualization -> Trend Analysis (left column)
-"""
-@app.callback(
-    Output('trend_analysis', 'figure'),
-    [Input('default_button', 'n_clicks'),
-     Input('temp_button', 'n_clicks'),
-     Input('wind_button', 'n_clicks'),
-     Input('new_snow_button', 'n_clicks'),
-     Input('snow_height_button', 'n_clicks'),
-     Input('station_dropdown', 'value'),
-     Input('moving_avg_window', 'value')]
-)
-def weather_trend(default_button, temp_button, wind_button, new_snow_button, snow_height_button, selected_stations,window_size):
-    # Determine which button was last clicked
-    ctx = callback_context
-    button_id = 'default_button'  # Default fallback
-
-    if ctx.triggered:
-        button_id = ctx.triggered[0]['prop_id'].split('.')[0]
-
-    fig = go.Figure()
-
-    # Function to get mean data for the selected or all stations
-    def calculate_mean(df, value_column):
-        if selected_stations:  # If stations are selected, filter by these stations
-            df = df[df['code'].isin(selected_stations)]
-        return df.groupby('date')[value_column].mean()
-
-    # Plot for each station
-    def plot_per_station(df, value_column, y_axis_label):
-        if not selected_stations:  # If no stations are selected, calculate mean
-            mean_data = calculate_mean(df, value_column)
-            moving_avg = mean_data.rolling(window=window_size, min_periods=1).mean()
-            fig.add_trace(go.Scatter(
-                x=mean_data.index,
-                y=mean_data.values,
-                mode='lines',
-                name='Mean Value'
-            ))
-            fig.add_trace(go.Scatter(
-                x=moving_avg.index,
-                y=moving_avg.values,
-                mode='lines',
-                line=dict(dash='dash'),
-                name='Moving Average'
-            ))
-        else:  # Plot data for selected stations
-            for station in selected_stations:
-                station_data = df[df['code'] == station]
-                fig.add_trace(go.Scatter(
-                    x=station_data['date'],
-                    y=station_data[value_column],
-                    mode='lines',
-                    name=f"{station}"
-                ))
-                # Add moving average line
-                station_data_sorted = station_data.sort_values(by='date')
-                moving_avg = station_data_sorted[value_column].rolling(window=window_size, min_periods=1).mean()
-                fig.add_trace(go.Scatter(
-                    x=station_data_sorted['date'],
-                    y=moving_avg,
-                    mode='lines',
-                    line=dict(dash='dash'),
-                    name=f"{station} ({window_size}-day MA)"
-                ))
-        fig.update_layout(yaxis_title=y_axis_label)
-
-    # Plot for the default button
-    if button_id == 'default_button':
-        temp_data = calculate_mean(trend_measure_df, 'air_temp_daily_mean')
-        wind_data = calculate_mean(trend_measure_df, 'wind_speed_daily_mean')
-        snow_height_data = calculate_mean(trend_snow_df, 'snow_height_daily_mean')
-
-        # Add line plot for mean temperature
-        fig.add_trace(go.Scatter(
-            x=temp_data.index,
-            y=temp_data.values,
-            mode='lines',
-            name='Mean Temperature'
-        ))
-
-        # Add line plot for mean wind speed
-        fig.add_trace(go.Scatter(
-            x=wind_data.index,
-            y=wind_data.values,
-            mode='lines',
-            name='Mean Wind Speed'
-        ))
-
-        # Add bar chart for mean snow height
-        fig.add_trace(go.Bar(
-            x=snow_height_data.index,
-            y=snow_height_data.values,
-            name='Mean Snow Height'
-        ))
-
-    # Plot for temperature button
-    elif button_id == 'temp_button':
-        plot_per_station(trend_measure_df, 'air_temp_daily_mean', "Air Temperature [°C]")
-
-    # Plot for wind speed button
-    elif button_id == 'wind_button':
-        plot_per_station(trend_measure_df, 'wind_speed_daily_mean', "Wind Speed [m/s]")
-
-    # Plot for snow height button
-    elif button_id == 'snow_height_button':
-        plot_per_station(trend_snow_df, 'snow_height_daily_mean', "Height of Snowpack [cm]")
-
-    # Plot for new snow button
-    elif button_id == 'new_snow_button':
-        plot_per_station(trend_snow_df, 'new_snow_daily_mean', "Height of New Snow [cm]")
-
-    # Update layout
-    fig.update_layout(
-        xaxis_title="Measure Date",
-        margin={"r": 0, "t": 0, "l": 0, "b": 0},
-        height=300,
-        legend_title="Station Code"
-    )
-
-    return fig
-
-"""
------------------------------------------------------------------------------------------
-Section 5: Live Weather Data Visualization -> PCA Data (left column)
-"""
-@app.callback(
-    Output('k_cluster_map', 'figure'),
-        [Input('default_button', 'n_clicks'),
-         Input('date_dropdown', 'value')],
-         [State('default_button', 'n_clicks')]
-)
-def k_means_clusters(default_button, selected_date, last_default):
-    # Determine which button was last clicked
-    ctx = callback_context
-    button_id = 'default_button'  # Default fallback
-
-    if ctx.triggered:
-        trigger = ctx.triggered[0]['prop_id'].split('.')[0]
-        if trigger in ['default_button']:
-            button_id = trigger
-        else:
-        # No new button click; retain previous button
-            button_id = 'default_button'
-
-    # Create a scatter plot for the K-Means clusters
-    fig = go.Figure()
-
-    # Filter the data based on the selected date:
-    if selected_date:
-        filtered_pca_live_df = pca_live_df[pca_live_df['measure_date'] == selected_date]
-    else:
-        #take max date from the data:
-        filtered_pca_live_df = pca_live_df[pca_live_df['measure_date'] == pca_live_df['measure_date'].max()]
-
-    if button_id == 'default_button':
-        # Plot the K-Means clusters, based on PCA data:
-        for cluster in pca_training_df['risk'].unique():
-            pca_data = pca_training_df[pca_training_df['risk'] == cluster]
-            fig.add_trace(go.Scatter(
-                x=pca_data['PCA1'],
-                y=pca_data['PCA2'],
-                mode='markers',
-                marker=dict(size=5),
-                name=f'Risk: {cluster}')
-            )
-
-        # Add the live PCA data from the latest update:
-        fig.add_trace(go.Scatter(
-            x=filtered_pca_live_df['PCA1'],
-            y=filtered_pca_live_df['PCA2'],
-            mode='markers',
-            marker=dict(size=5, color='black'),
-            name='Live Data')
-        )
-
-        # Add the cluster centers from k_centers_df
-        fig.add_trace(go.Scatter(
-            x=k_centers_df['PCA1'],
-            y=k_centers_df['PCA2'],
-            mode='markers',
-            marker=dict(size=12, color='black', symbol='x'),
-            name='Cluster Centers')
-        )
-
-        # Update layout for better visualization
-        fig.update_layout(
-            xaxis_title="Principal Component 1 (PCA1)",
-            yaxis_title="Principal Component 2 (PCA2)",
-            legend_title="Cluster Risk Levels",
-            template="plotly_white",
-            height=300,
-            margin={"r": 0, "t": 0, "l": 0, "b": 0}
-        )
-
-    return fig
-"""
------------------------------------------------------------------------------------------
-Section 6: Live Weather Data Visualization -> Cluster Matrix (left column)
-"""
-
-@app.callback(
-    Output('cluster_matrix', 'figure'),
-    [Input('region_dropdown', 'value')]
-)
-def update_cluster_matrix(selected_region):
-    # Filtere Daten nach ausgewählter Region
-    filtered_pca_live_df = pca_live_df[pca_live_df['alpine_region'] == selected_region]
-
-    # Erstelle eine Liste aller eindeutigen Stationscodes und Messdaten
-    station_codes = filtered_pca_live_df['station_code'].unique()
-    measure_dates = filtered_pca_live_df['measure_date'].unique()
-
-    # Initialisiere eine leere Matrix mit NaN-Werten
-    cluster_matrix = np.full((len(station_codes), len(measure_dates)), np.nan)
-
-    # Mapping von Stationscodes und Messdaten zu Indizes
-    station_idx_map = {code: idx for idx, code in enumerate(station_codes)}
-    date_idx_map = {date: idx for idx, date in enumerate(measure_dates)}
-
-    # Fülle die Matrix mit K-Cluster-Werten
-    for _, row in filtered_pca_live_df.iterrows():
-        i = station_idx_map[row['station_code']]
-        j = date_idx_map[row['measure_date']]
-        cluster_matrix[i, j] = row['k_cluster']
-
-    # Erstelle eine Liste der Farben basierend auf der K-Cluster-Zuordnung
-    color_matrix = np.empty(cluster_matrix.shape, dtype=object)
-    for i in range(len(station_codes)):
-        for j in range(len(measure_dates)):
-            cluster_value = cluster_matrix[i, j]
-            if np.isnan(cluster_value):
-                color_matrix[i, j] = 'white'  # Setze fehlende Werte auf weiß
-            else:
-                # Sicherstellen, dass der k_cluster-Wert im color_map existiert
-                color_matrix[i, j] = color_map.get(int(cluster_value), 'white')  # 'white' als Fallback für unbekannte Werte
-
-    # Erstelle das Heatmap-Plot mit benutzerdefinierten Farben
-    fig = go.Figure(data=go.Heatmap(
-        z=cluster_matrix,  # Numerische Werte für Heatmap
-        x=measure_dates,
-        y=station_codes,
-        colorscale=[[0, 'white'], [1, 'white']],  # Erstellt eine Farbskala basierend auf der festen Zuordnung
-        showscale=False,  # Keine Farblegende anzeigen
-        hovertemplate="Cluster: %{z}",
-    ))
-
-    # Hinzufügen eines Scatters für die benutzerdefinierte Farbzuordnung
-    for i in range(len(station_codes)):
-        for j in range(len(measure_dates)):
-            if color_matrix[i, j] != 'white':  # Nur hinzufügen, wenn es eine gültige Farbe gibt
-                fig.add_trace(go.Scatter(
-                    x=[measure_dates[j]], y=[station_codes[i]], mode='markers',
-                    marker=dict(size=10, color=color_matrix[i, j], opacity=1),
-                    showlegend=False  # Nur Marker ohne Legende
-                ))
-
-    # Benutzerdefinierte Legende hinzufügen
-    for k_value, color in color_map.items():
-        fig.add_trace(go.Scatter(
-            x=[None], y=[None], mode='markers',
-            marker=dict(size=10, color=color),
-            name=f'{k_value}: {color}'
-        ))
-
-    # Layout konfigurieren
-    fig.update_layout(
-        xaxis_title="Measure Date",
-        yaxis_title="Station Code",
-        template="plotly_white",
-        height=300,
-        margin={"r": 0, "t": 0, "l": 0, "b": 0}
-    )
-    return fig
 
 if __name__ == '__main__':
     app.run_server(debug=True)

@@ -9,49 +9,82 @@
     --font-size-h3: 12px;
     --font-size-h4: 18px;
 }
+/*-----------------------------------*/
 /* Main Layout */
 .main_container {
     display: flex;
-    width: 100%;
-    transform: scale(0.98);
+    width: 111%;
+    transform: scale(0.90);
     transform-origin: top left;
-    margin: 0;
 }
-
+/*-----------------------------------*/
 /* Header */
 .header {
-    width: 100%;
-    margin: 0;
+    width: 99.6%;
+    position: relative; /* Required for snowflakes */
+    overflow: hidden; /* Prevent snowflakes from overflowing */
+    margin: 3px 0px 3px 3px;
+    display: flex;
+    padding: 12px 0;
+    align-items: center;
     text-align: center;
     box-sizing: border-box;
-
+    background-color: #0c1d65;
+    box-shadow: 0 4px 4px rgba(0, 0, 0.2, 0.3);
+    border-radius: 5px;
 }
-
+.header h1 {
+    margin-right: 25px; /* Space between H1 and H3 */
+}
+.sub_header {
+    margin: 2px 0px 6px 3px;
+    border: 1px solid #696969FF;
+    border-radius: 5px;
+    padding: 12px 12px 12px 12px;
+    background-color: #f0f0f0;
+}
+/*-----------------------------------*/
+/* Snowflakes in Header */
+.snowflake {
+    position: absolute;
+    top: -20px;
+    animation: fall linear infinite;
+}
+/* Snowflake Animation */
+@keyframes fall {
+    0% {
+        transform: translateY(0);
+        opacity: 1;
+    }
+    100% {
+        transform: translateY(100vh); /* fall to the bottom of the screen */
+        opacity: 0;
+    }
+}
+/*-----------------------------------*/
 /* General Layout */
 .right_column {
-    display: flex;
-    width: 30%;
+    width: 40%;
     flex-direction: column;
-    gap: var(--main-gap);
-    padding-top: 18px;
-    margin-left: var(--main-gap);
 }
 .left_column {
     display: flex;
-    width: 70%;
+    width: 60%;
     flex-direction: column;
-    gap: var(--main-gap);
-    margin-left: var(--main-gap);
-    border-right: 1px solid #696969FF;
-    padding-right : 10px;
+    padding-right : 3px;
 }
+/*-----------------------------------*/
 /* Container for the two cluster graphs */
 .k_cluster_row,
-.weather_row{
+.weather_row,
+.right_column {
     display: flex;
     gap: var(--main-gap); /* Optional, for spacing between the graphs */
+    border: 1px solid #696969FF;
+    border-radius: 5px;
+    padding: 6px 6px 12px 12px;
+    margin: 2px 0px 6px 3px;
 }
-
 /* Optional: Styling for the individual graph containers */
 .k_cluster_scatter,
 .k_cluster_matrix,
@@ -59,17 +92,70 @@
 .trend_graph{
     width: 48%;  /* Adjust the width as necessary */
 }
-
+/*-----------------------------------*/
 /* Buttons Style */
 .weather_buttons {
     display: flex;
-    gap: 15px;
+    gap: 8px;
+    align-content: center;
     justify-content: left;
-    margin-left: var(--main-gap);
-    margin-top: 24px;
     padding-bottom: 10px;
 }
-
+.weather_buttons button {
+    font-size: 14px;
+    height: 35px;
+    width: 160px;
+    border: 1px solid grey;
+    border-radius: 5px;
+    background-color: #9ea5a8;
+    box-shadow: 2px 2px 5px rgba(0, 0, 0, 0.2);
+    transition: all 0.3s ease;
+}
+.weather_buttons button:hover {
+    background-color: #b1def4;
+    font-weight: bold;
+    box-shadow: 3px 3px 7px rgba(0, 0, 0, 0.3);
+}
+.weather_buttons button.active {
+    box-shadow: inset 2px 2px 5px rgba(0, 0, 0, 0.3); /* Click effect */
+    background-color: #c8e5f8;
+    font-weight: bold;
+}
+/*-----------------------------------*/
+/* Radiobuttons Style */
+.region_radio {
+    display: flex;
+    gap: 50px;
+    margin-left: 12px;
+    margin-bottom: 5px;
+    font-size: 14px;
+}
+.canton_radio {
+    display: flex;
+    gap: 22px;
+    margin-left: 12px;
+    margin-bottom: 12px;
+    font-size: 14px;
+}
+.radio_group input {
+    margin-right: 5px;
+}
+/*-----------------------------------*/
+/* Station Dropdown Style */
+.station_dropdown {
+    border-radius: 5px;
+    box-shadow: 2px 2px 5px rgba(0, 0, 0, 0.2);
+}
+.station_dropdown .Select-control {
+    font-size: 14px;
+}
+.station_dropdown .Select-menu {
+    font-size: 14px;
+}
+.station_dropdown .Select-placeholder {
+    font-size: 14px;
+}
+/*-----------------------------------*/
 /* Training Data Graphs */
 .training_geomap,
 .training_data {
@@ -80,12 +166,7 @@
     margin-left: var(--main-gap);
     margin-top: 0;
 }
-
-/* Hover Cursor */
-.hover_cursor {
-    cursor: url("/assets/cursor-icon.svg"), auto;
-}
-
+/*-----------------------------------*/
 /* Font Styles */
 h1, h2, h3, h4, p {
     font-family: var(--font-primary);
@@ -95,9 +176,8 @@ h1, h2, h3, h4, p {
 h1 {
     font-size: var(--font-size-h1);
     font-weight: var(--font-bold);
-    color: blue;
+    color: #b1def4;
     margin-left: 20px;
-    margin-top: 12px;
 }
 h2 {
     font-size: var(--font-size-h2);
@@ -106,6 +186,8 @@ h2 {
 h3 {
     font-size: var(--font-size-h3);
     font-weight: normal;
+    color: #989ca8;
+    padding-top: 6px;
 }
 h4 {
     font-size: var(--font-size-h4);
