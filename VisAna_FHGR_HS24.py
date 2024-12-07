@@ -1,10 +1,11 @@
 from dash import Dash, dcc, html, Input, Output, State, callback_context, no_update
 import os
-from datetime import datetime
+from datetime import datetime, date, timedelta
 import pandas as pd
 import numpy as np
 import dash_bootstrap_components as dbc
 import plotly.graph_objects as go
+from debugpy.common.timestamp import current
 from jedi.api.refactoring import inline
 from plotly.subplots import make_subplots
 from Data_Loader import (load_imis_stations, load_hist_data, load_daily,
@@ -19,7 +20,6 @@ daily_snow_df = load_daily()
 k_centers_df = load_kmeans_centers()
 pca_training_df = load_pca_training()
 pca_live_df = load_pca_live()
-last_update = datetime.fromtimestamp(os.path.getmtime('assets/API/daily/05_SLF_daily_imis_snow_clean.csv')).strftime('%Y-%m-%d-%H:%M')
 """
 -------------------------------------------------------------------------------------------------------------------
 -> Define filters:
@@ -58,6 +58,9 @@ month_mapping = {
     5: 3,  # March
     6: 4  # April
 }
+
+last_update = datetime.fromtimestamp(os.path.getmtime('assets/API/daily/05_SLF_daily_imis_snow_clean.csv')).strftime('%Y-%m-%d-%H:%M')
+latest_date = pd.to_datetime(daily_snow_df['measure_date'].max())
 """
 -------------------------------------------------------------------------------------------------------------------
 -> Create Dash App:
@@ -118,7 +121,9 @@ app.layout = html.Div([
             # Live Weather Data and Trend:
             html.Div([ # weather_row
                 html.Div([ # map_graph
-                    html.H2('Snow and Weather Monitoring'),
+                    html.H2(['Snow and Weather Conditions on ',
+                    html.Span(latest_date.strftime("%d-%b-%Y"),
+                           style={'color': 'blue'})]),
                     dcc.Graph(id='live_geomap')
                 ], className='map_graph'),
                 html.Div([ # trend_graph
@@ -139,16 +144,19 @@ app.layout = html.Div([
             # Risk Assessment Clusters and Matrix:
             html.Div([
                 html.Div([ # k_cluster_scatter
-                    html.H2('Daily Risk Clustering)'),
+                    html.H2('Daily Risk Clustering'),
                     dcc.Graph(id='k_cluster_map'),
-                    dcc.Dropdown(
+                    html.Div([
+                    dcc.DatePickerSingle(
                         id='date_dropdown',
-                        options=[{'label': date, 'value': date} for date in sorted(pca_live_df['measure_date'].unique())],
-                        placeholder="Select a Measure Date...",
-                        value=pca_live_df['measure_date'].max())
+                        min_date_allowed=date(2024, 10, 5),
+                        max_date_allowed=pca_live_df['measure_date'].max(),
+                        initial_visible_month=date.today() - timedelta(days=1),
+                        display_format='DD-MM-YYYY')
+                        ], className='date_dropdown'),
                     ], className='k_cluster_scatter'),
                 html.Div([ # k_cluster_matrix
-                    html.H2('Risk-Assessment Matrix'),
+                    html.H2('Risk Assessment Matrix'),
                     dcc.Graph(id='cluster_matrix'),
                     dcc.Slider(
                         id='month_slider',
@@ -423,7 +431,7 @@ def weather_trend(active_button, selected_region, selected_canton, selected_stat
         if with_moving_avg:
             moving_avg = mean_data.rolling(window=moving_window, min_periods=1).mean()
             fig.add_trace(go.Scatter(x=mean_data.index, y=mean_data.values, mode='lines', name=y_axis_label))
-            fig.add_trace(go.Scatter(x=moving_avg.index, y=moving_avg.values, mode='lines', line=dict(dash='dash'),
+            fig.add_trace(go.Scatter(x=moving_avg.index, y=moving_avg.values, mode='lines', line=dict(dash='dot', color='black', width=1),
                                      name=f'{moving_window}-Day Moving Average'))
         else:
             fig.add_trace(go.Scatter(x=mean_data.index, y=mean_data.values, mode='lines', name=y_axis_label))
@@ -432,20 +440,39 @@ def weather_trend(active_button, selected_region, selected_canton, selected_stat
             fig.add_trace(go.Bar(x=mean_data.index, y=mean_data.values, name=y_axis_label))
 
     # Function to plot individual station trends
-    def plot_station_trends(df, value_column, y_axis_label):
+    def plot_station_trends(df, value_column, y_axis_label, color_scale):
         if selected_stations:  # Only plot individual stations if selected stations exist
-            for station in selected_stations:
+            for i, station in enumerate(selected_stations):
                 station_data = df[df['station_code'] == station]
-                fig.add_trace(go.Scatter(x=station_data['measure_date'], y=station_data[value_column], mode='lines',
-                                         name=f"{station}"))
+                color=color_scale[i % len(color_scale)]
+
+                fig.add_trace(go.Scatter(
+                    x=station_data['measure_date'],
+                    y=station_data[value_column],
+                    mode='lines',
+                    name=f"{station}",
+                    line=dict(color=color)))
+
                 moving_avg = station_data[value_column].rolling(window=moving_window, min_periods=1).mean()
                 fig.add_trace(
-                    go.Scatter(x=station_data['measure_date'], y=moving_avg, mode='lines', line=dict(dash='dash'),
-                               name=f"{station} ({moving_window}-day MA)"))
+                    go.Scatter(
+                        x=station_data['measure_date'],
+                        y=moving_avg,
+                        mode='lines',
+                        line=dict(dash='dot', color=color, width=1),
+                        name=f"{station} ({moving_window}-day MA)"))
         else:  # Plot aggregated data if no stations are selected
             plot_trend(df, value_column, y_axis_label, with_moving_avg=True)
 
     fig = go.Figure()
+
+    # Define color scales based on the active button
+    color_scales = {
+        'temp_button': ['#006837', '#2ca25f', '#66c2a4', '#99d8c9', '#c7e9c0'],  # Green tones (blugrn)
+        'wind_button': ['#7f3b08', '#8c510a', '#d88e2f', '#f6e8c3', '#f5f5f5'],  # Brown tones (brwnyl)
+        'snow_height_button': ['#f7fcfd', '#e0ecf4', '#bdd7e7', '#6baed6', '#3182bd'],  # Blue tones (Blues)
+        'new_snow_button': ['#f7f4f9', '#e7d9eb', '#d084a8', '#9e3f87', '#6a0f57'],  # Blue-Violet tones (Dense)
+    }
 
     # Handle the active button conditions
     if active_button == 'default_button':
@@ -456,19 +483,42 @@ def weather_trend(active_button, selected_region, selected_canton, selected_stat
         plot_trend(filtered_data, 'new_snow_mean_stations', 'Mean New Snow [cm]', is_bar=True, with_moving_avg=False)
 
     elif active_button == 'temp_button':
-        plot_station_trends(filtered_data, 'air_temp_mean_stations', "Air Temperature [°C]")
+        plot_station_trends(filtered_data, 'air_temp_mean_stations', "Air Temperature [°C]", color_scales['temp_button'])
     elif active_button == 'wind_button':
-        plot_station_trends(filtered_data, 'wind_speed_max_stations', "Wind Speed [m/s]")
+        plot_station_trends(filtered_data, 'wind_speed_max_stations', "Wind Speed [m/s]", color_scales['wind_button'])
     elif active_button == 'snow_height_button':
-        plot_station_trends(filtered_data, 'snow_height_mean_stations', "Height of Snowpack [cm]")
+        plot_station_trends(filtered_data, 'snow_height_mean_stations', "Height of Snowpack [cm]", color_scales['snow_height_button'])
     elif active_button == 'new_snow_button':
-        plot_station_trends(filtered_data, 'new_snow_mean_stations', "Height of New Snow [cm]")
+        plot_station_trends(filtered_data, 'new_snow_mean_stations', "Height of New Snow [cm]", color_scales['new_snow_button'])
 
     # Update layout
     fig.update_layout(
         margin={"r": 0, "t": 0, "l": 0, "b": 0},
         template="plotly_white",
-        height=200
+        height=200,
+        legend=dict(
+            font=dict(color='gray', size=8, family='Arial, sans-serif'),
+            bgcolor='rgba(0, 0, 0, 0)',
+            orientation='h',
+            yanchor='bottom',
+            y=-0.4,
+            xanchor='center',
+            x=0.5),
+        showlegend=True,
+    )
+
+    fig.update_xaxes(
+        autorange=True,
+        showgrid=False,
+        showticklabels=True,
+        tickformat="%d-%b",
+        tickfont=dict(color='gray', size=8, family='Arial, sans-serif'))
+
+    fig.update_yaxes(
+        autorange=True,
+        showgrid=False,
+        showticklabels=True,
+        tickfont=dict(color='gray', size=8, family='Arial, sans-serif')
     )
 
     return fig
@@ -480,7 +530,7 @@ Section 2.1: left column - Risk Clustering (PCA)
 """
 @app.callback(
     Output('k_cluster_map', 'figure'),
-         Input('date_dropdown', 'value')
+         Input('date_dropdown', 'date')
 )
 def k_means_clusters(selected_date):
     if selected_date:
@@ -525,11 +575,36 @@ def k_means_clusters(selected_date):
 
         # Update layout for better visualization
         fig.update_layout(
-            xaxis_title="PCA-1",
-            yaxis_title="PCA-2",
+            xaxis_title={
+                'text': 'PCA-1',
+                'font': {
+                    'size': 8,
+                    'family': 'Arial, sans-serif',
+                    'color': 'gray'}
+                },
+            yaxis_title={
+                'text': 'PCA-2',
+                'font': {
+                    'size': 8,
+                    'family': 'Arial, sans-serif',
+                    'color': 'gray'}
+                },
             template="plotly_white",
             height=200,
-            margin={"r": 0, "t": 0, "l": 0, "b": 0}
+            margin={"r": 0, "t": 0, "l": 0, "b": 0},
+        )
+
+        fig.update_xaxes(
+            autorange=True,
+            showgrid=False,
+            showticklabels=True,
+            tickfont=dict(color='gray', size=8, family='Arial, sans-serif'))
+
+        fig.update_yaxes(
+            autorange=True,
+            showgrid=False,
+            showticklabels=True,
+            tickfont=dict(color='gray', size=8, family='Arial, sans-serif')
         )
 
     return fig
@@ -566,7 +641,7 @@ def update_cluster_matrix(selected_region, selected_canton, selected_month_idx):
 
     # Create a matrix of k_cluster values for each station and measure date
     aggregated_data = filtered_data.groupby([group_by_column, 'measure_date'])['k_cluster'].mean().reset_index()
-    y_values = aggregated_data[group_by_column].unique()
+    y_values = sorted(aggregated_data[group_by_column].unique(), reverse=True)
     measure_dates = aggregated_data['measure_date'].unique()
     y_idx_map = {value: idx for idx, value in enumerate(y_values)}
     date_idx_map = {date: idx for idx, date in enumerate(measure_dates)}
@@ -617,7 +692,7 @@ def update_cluster_matrix(selected_region, selected_canton, selected_month_idx):
     for k_value, label, color in sorted_clusters:
         fig.add_trace(go.Scatter(
             x=[None], y=[None], mode='markers',
-            marker=dict(size=10, color=color),
+            marker=dict(size=6, color=color),
             name=label
         ))
 
@@ -625,10 +700,32 @@ def update_cluster_matrix(selected_region, selected_canton, selected_month_idx):
         template="plotly_white",
         height=200,
         margin={"r": 0, "t": 0, "l": 0, "b": 0},
+        legend = dict(
+            font=dict(color='gray', size=8, family='Arial, sans-serif'),
+            bgcolor='rgba(0, 0, 0, 0)',
+            orientation='h',
+            yanchor='bottom',
+            y=-0.4,
+            xanchor='center',
+            x=0.5),
+        showlegend = True,
     )
+
+    fig.update_xaxes(
+        autorange=True,
+        showgrid=False,
+        showticklabels=True,
+        tickformat="%d-%b",
+        tickfont=dict(color='gray', size=8, family='Arial, sans-serif'))
+
+    fig.update_yaxes(
+        autorange=True,
+        showgrid=False,
+        showticklabels=True,
+        tickfont=dict(color='gray', size=8, family='Arial, sans-serif')
+    )
+
     return fig
-
-
 
 """
 -----------------------------------------------------------------------------------------

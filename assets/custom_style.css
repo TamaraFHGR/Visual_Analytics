@@ -156,6 +156,31 @@
     font-size: 14px;
 }
 /*-----------------------------------*/
+/* DatePicker Style*/
+.date_dropdown .DatePickerInput {
+    border-radius: 5px;
+    border: 2px solid #ccc;
+    padding: 5px 10px;
+    font-size: 10px;
+    font-family: Arial, sans-serif;
+}
+.date_dropdown .DatePickerInput--focused {
+    border-color: #007bff;  /* Randfarbe, wenn der DatePicker fokussiert ist */
+}
+
+/*-----------------------------------*/
+/* Slider Design */
+.rc-slider-mark-text {
+    white-space: nowrap;
+    font-size: 8px;
+    color: gray;
+    font-family: Arial, sans-serif;
+}
+.rc-slider-tooltip {
+    font-size: 8px;
+}
+
+/*-----------------------------------*/
 /* Training Data Graphs */
 .training_geomap,
 .training_data {
