@@ -14,18 +14,18 @@
 .main_container {
     display: flex;
     width: 111%;
-    transform: scale(0.895);
+    transform: scale(0.899);
     transform-origin: top left;
 }
 /*-----------------------------------*/
 /* Header */
 .header {
-    width: 99.5%;
+    width: 99.6%;
     position: relative; /* Required for snowflakes */
     overflow: hidden; /* Prevent snowflakes from overflowing */
-    margin: 3px 0px 3px 3px;
+    margin: 2px 0px 3px 3px;
     display: flex;
-    padding: 12px 0;
+    padding: 10px 0;
     align-items: center;
     text-align: center;
     box-sizing: border-box;

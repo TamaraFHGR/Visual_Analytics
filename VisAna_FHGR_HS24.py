@@ -92,7 +92,6 @@ app.layout = html.Div([
                     html.Button('New Snow', id='new_snow_button', n_clicks=0, className=''),
                 ], className='weather_buttons'),
                 html.Div([ # radio_group
-                    html.Hr(),
                     dcc.RadioItems(
                         id='region_radio',
                         options=[{'label': region, 'value': region} for region in all_regions.keys()],
@@ -824,7 +823,7 @@ def imis_accident_map(selected_year):
         ),
         margin=dict(l=0, r=0, t=0, b=0),
         template='plotly_white',
-        height=250
+        height=230
     )
     fig.update_yaxes(
         tickfont=dict(color='gray', size=8, family='Arial, sans-serif')
@@ -915,7 +914,7 @@ def accidents_stats(selected_month, selected_risk_groups):
     # Update layout
     fig.update_layout(
         showlegend=False,
-        height=370,
+        height=350,
         margin=dict(t=15, b=0, l=0, r=0),
         font=dict(size=8),
         template='plotly_white',
