@@ -142,18 +142,25 @@
 }
 /*-----------------------------------*/
 /* Station Dropdown Style */
-.station_dropdown {
+.station_dropdown,
+.region_dropdown {
     border-radius: 5px;
     box-shadow: 2px 2px 5px rgba(0, 0, 0, 0.2);
 }
-.station_dropdown .Select-control {
+.station_dropdown .Select-control,
+.region_dropdown .Select-control {
     font-size: 14px;
 }
-.station_dropdown .Select-menu {
+.station_dropdown .Select-menu,
+.region_dropdown .Select-menu{
     font-size: 14px;
 }
-.station_dropdown .Select-placeholder {
+.station_dropdown .Select-placeholder,
+.region_dropdown .Select-placeholder {
     font-size: 14px;
+}
+.region_dropdown {
+    margin-bottom: 20px;
 }
 /*-----------------------------------*/
 /* DatePicker Style*/
@@ -190,6 +197,22 @@
     justify-content: left;
     margin-left: var(--main-gap);
     margin-top: 0;
+}
+/*-----------------------------------*/
+/* Checklist Style */
+.risk_group_checklist {
+    display: flex;
+    font-size: 14px;
+    margin-left: 16px;
+}
+.risk_group_checklist input {
+    width: 15px;
+    height: 15px;
+    margin-right: 5px;
+}
+/* Label-Abstand vergrößern */
+.risk_group_checklist label {
+    margin-right: 8px;
 }
 /*-----------------------------------*/
 /* Font Styles */

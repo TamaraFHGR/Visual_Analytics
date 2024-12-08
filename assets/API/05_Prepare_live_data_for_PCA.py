@@ -36,7 +36,7 @@ live_snow_df = live_snow_df.rename(columns={
 combined_measure_df = pd.merge(live_measure_df, live_snow_df, on=['station_code', 'measure_date'], how='outer')
 
 # Step 3: Combine with IMIS data:
-live_df = pd.merge(imis_df, combined_measure_df, on='station_code', how='outer')
+live_df = pd.merge(imis_df, combined_measure_df, left_on='code', right_on='station_code', how='outer')
 print(live_df.head())
 
 # Step 4: # Grouping of alpine regions based on cantons
@@ -73,6 +73,9 @@ live_df['region_id'] = live_df['alpine_region'].apply(assign_region_id)
 live_df['elevation_group'] = pd.cut(live_df['elevation'], bins=[0, 2000, 3000, 4000, 5000], labels=['2000', '3000', '4000', '5000'])
 #print(live_df[['canton_code', 'alpine_region', 'elevation', 'elevation_group']].head())
 
-# Step 7: Save the data:
+# Step 7: remove rows where alpine_region is NONE:
+live_df = live_df[live_df['alpine_region'] != 'NONE']
+
+# Step 8: Save the data:
 live_df.to_csv('daily/06_SLF_daily_imis_all_live_data.csv', sep=';', index=False)
 

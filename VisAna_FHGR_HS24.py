@@ -9,7 +9,7 @@ from debugpy.common.timestamp import current
 from jedi.api.refactoring import inline
 from plotly.subplots import make_subplots
 from Data_Loader import (load_imis_stations, load_hist_data, load_daily,
-                         load_kmeans_centers, load_pca_training, load_pca_live)
+                         load_kmeans_centers, load_pca_training, load_pca_live, load_kmeans_training)
 """
 -------------------------------------------------------------------------------------------------------------------
 -> Load Data:
@@ -20,6 +20,7 @@ daily_snow_df = load_daily()
 k_centers_df = load_kmeans_centers()
 pca_training_df = load_pca_training()
 pca_live_df = load_pca_live()
+kmeans_df = load_kmeans_training()
 """
 -------------------------------------------------------------------------------------------------------------------
 -> Define filters:
@@ -181,11 +182,35 @@ app.layout = html.Div([
             html.Div([ # training_map
                 html.H2('Historical Avalanche Accident since 1998'),
                 dcc.Graph(id='training_geomap'),
-                dcc.RangeSlider(id='altitude', min=1000, max=4000, step=500),
+                dcc.Slider(
+                    id='year_slider',
+                    min=1998,
+                    max=2023,
+                    step=None,
+                    value=2021,
+                    marks={
+                        year: {'label': str(year), 'style': {'transform': 'rotate(45deg)', 'whiteSpace': 'nowrap'}}
+                        for year in range(1998, 2024)
+                    },
+                    tooltip={"placement": "bottom", "always_visible": False}),
+                html.Div([ # region_dropdown
+                    dcc.Dropdown(
+                        id='region_dropdown',
+                        options=['Western Alps', 'Southern Alps', 'Central Alps', 'Eastern Alps'],
+                            multi=False,
+                            placeholder="Select an Alpine Region...")
+                    ], className='region_dropdown')
             ], className='training_map'),
             html.Div([ # training_data
-                dcc.Graph(id='accidents_stats')
-            ], className='training_data'),
+                dcc.Graph(id='accidents_stats'),
+                html.Div(
+                    [dcc.Checklist(
+                        id='risk_group_checklist',
+                        options=[{'label': group, 'value': group} for group in kmeans_df['risk_group'].unique()],
+                        value=kmeans_df['risk_group'].unique(),
+                        inline=True)
+                    ], className='risk_group_checklist')
+                ], className='training_data'),
         ], style={'display': 'inline-block'}, className='right_column')
     ], className='main_container')
     ])
@@ -407,7 +432,7 @@ Section 1.2: left column - Trend Visualization
      Input('moving_avg_window', 'value')],
 )
 def weather_trend(active_button, selected_region, selected_canton, selected_stations, moving_window):
-    # Filter data based on region, canton, and station
+    # Filter data based on region, canton, and station:
     filtered_data = daily_snow_df.copy()
 
     if selected_region and selected_region != 'Entire Alpine Region':
@@ -420,28 +445,48 @@ def weather_trend(active_button, selected_region, selected_canton, selected_stat
     if selected_stations:
         filtered_data = filtered_data[filtered_data['station_code'].isin(selected_stations)]
 
-    # Function to calculate mean for any given value column
+    # Function to calculate mean for any given value column:
     def calculate_mean(df, value_column):
         return df.groupby('measure_date')[value_column].mean()
 
-    # Function to plot the trend data
-    def plot_trend(df, value_column, y_axis_label, is_bar=False, with_moving_avg=False):
+    # Function to plot the trend data (global aggregation, no stations selected):
+    def plot_trend(df, value_column, y_axis_label, line_color, avg_mean_color, is_bar=False, with_moving_avg=False):
         mean_data = calculate_mean(df, value_column)
 
-        if with_moving_avg:
+        if with_moving_avg is True:
             moving_avg = mean_data.rolling(window=moving_window, min_periods=1).mean()
-            fig.add_trace(go.Scatter(x=mean_data.index, y=mean_data.values, mode='lines', name=y_axis_label))
-            fig.add_trace(go.Scatter(x=moving_avg.index, y=moving_avg.values, mode='lines', line=dict(dash='dot', color='black', width=1),
-                                     name=f'{moving_window}-Day Moving Average'))
-        else:
-            fig.add_trace(go.Scatter(x=mean_data.index, y=mean_data.values, mode='lines', name=y_axis_label))
+            fig.add_trace(go.Scatter(
+                x=mean_data.index,
+                y=mean_data.values,
+                mode='lines',
+                line=dict(color=line_color, width=2),
+                name=y_axis_label))
+            fig.add_trace(go.Scatter(
+                x=moving_avg.index,
+                y=moving_avg.values,
+                mode='lines',
+                line=dict(dash='dot', color=avg_mean_color, width=1),
+                name=f'{moving_window}-Day Moving Average'))
+        elif with_moving_avg is False and is_bar is False:
+            fig.add_trace(go.Scatter(
+                x=mean_data.index,
+                y=mean_data.values,
+                mode='lines',
+                line=dict(color=line_color, width=2),
+                name=y_axis_label))
 
-        if is_bar:
-            fig.add_trace(go.Bar(x=mean_data.index, y=mean_data.values, name=y_axis_label))
+        elif with_moving_avg is False and is_bar is True:
+            fig.add_trace(go.Bar(
+                x=mean_data.index,
+                y=mean_data.values,
+                name=y_axis_label)
+            )
+            fig.update_layout(
+                barmode='stack')
 
     # Function to plot individual station trends
     def plot_station_trends(df, value_column, y_axis_label, color_scale):
-        if selected_stations:  # Only plot individual stations if selected stations exist
+        if selected_stations:
             for i, station in enumerate(selected_stations):
                 station_data = df[df['station_code'] == station]
                 color=color_scale[i % len(color_scale)]
@@ -459,28 +504,27 @@ def weather_trend(active_button, selected_region, selected_canton, selected_stat
                         x=station_data['measure_date'],
                         y=moving_avg,
                         mode='lines',
-                        line=dict(dash='dot', color=color, width=1),
+                        line=dict(dash='dot', color='black', width=1),
                         name=f"{station} ({moving_window}-day MA)"))
         else:  # Plot aggregated data if no stations are selected
-            plot_trend(df, value_column, y_axis_label, with_moving_avg=True)
+            plot_trend(df, value_column, y_axis_label, line_color='blue', avg_mean_color='black', is_bar=False, with_moving_avg=True)
 
     fig = go.Figure()
 
     # Define color scales based on the active button
     color_scales = {
-        'temp_button': ['#006837', '#2ca25f', '#66c2a4', '#99d8c9', '#c7e9c0'],  # Green tones (blugrn)
-        'wind_button': ['#7f3b08', '#8c510a', '#d88e2f', '#f6e8c3', '#f5f5f5'],  # Brown tones (brwnyl)
-        'snow_height_button': ['#f7fcfd', '#e0ecf4', '#bdd7e7', '#6baed6', '#3182bd'],  # Blue tones (Blues)
-        'new_snow_button': ['#f7f4f9', '#e7d9eb', '#d084a8', '#9e3f87', '#6a0f57'],  # Blue-Violet tones (Dense)
+        'temp_button': ['#0D4235','#15BF94','#16745C','#9CBFB6'],  # Green tones (blugrn)
+        'wind_button': ['#5F3515', '#FF6C00', '#FFC497', '#9CBFB6'],  # Brown tones (brwnyl)
+        'snow_height_button': ['#003741', '#2ADDFF', '#0000AB', '#9CBFB6'],  # Blue tones (Blues)
+        'new_snow_button': ['#601860', '#78A8F0', '#A8D8D8', '#9CBFB6'],  # Blue-Violet tones (Dense)
     }
 
     # Handle the active button conditions
     if active_button == 'default_button':
-        plot_trend(filtered_data, 'air_temp_mean_stations', 'Mean Temperature [°C]', with_moving_avg=False)
-        plot_trend(filtered_data, 'wind_speed_max_stations', 'Mean Wind Speed [m/s]', with_moving_avg=False)
-        plot_trend(filtered_data, 'snow_height_mean_stations', 'Mean Snow Height [cm]', is_bar=True,
-                   with_moving_avg=False)
-        plot_trend(filtered_data, 'new_snow_mean_stations', 'Mean New Snow [cm]', is_bar=True, with_moving_avg=False)
+        plot_trend(filtered_data, 'air_temp_mean_stations', 'Mean Temperature [°C]', 'green', 'black', is_bar = False, with_moving_avg=False)
+        plot_trend(filtered_data, 'wind_speed_max_stations', 'Mean Wind Speed [m/s]', 'orange', 'black', is_bar = False, with_moving_avg=False)
+        plot_trend(filtered_data, 'snow_height_mean_stations', 'Mean Snow Height [cm]','blue', 'black', is_bar=True,with_moving_avg=False)
+        plot_trend(filtered_data, 'new_snow_mean_stations', 'Mean New Snow [cm]', 'cyan', 'black', is_bar=True, with_moving_avg=False)
 
     elif active_button == 'temp_button':
         plot_station_trends(filtered_data, 'air_temp_mean_stations', "Air Temperature [°C]", color_scales['temp_button'])
@@ -733,35 +777,58 @@ Section 3.1: right column - Training Map
 """
 @app.callback(
     Output('training_geomap', 'figure'),
-    [Input('altitude', 'value')]
+    [Input('year_slider', 'value')]
 )
-def imis_accident_map(altitude):
-    if altitude:
-        min_altitude, max_altitude = altitude
-        filtered_acc_df = acc_df[(acc_df['start_zone_elevation'] >= min_altitude) & (acc_df['start_zone_elevation'] <= max_altitude)]
-    else:
-        filtered_acc_df = acc_df
+def imis_accident_map(selected_year):
+    filtered_df = acc_df.copy()
+    month_names = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'July', 'Aug', 'Sept', 'Oct', 'Nov', 'Dec']
 
-    lat_acc = filtered_acc_df['start_zone_coordinates_latitude']
-    long_acc = filtered_acc_df['start_zone_coordinates_longitude']
+    filtered_df['month'] = pd.to_datetime(filtered_df['date']).dt.month
+    filtered_df = filtered_df[filtered_df['year'] == selected_year]
+    filtered_df['rounded_elevation'] = (filtered_df['start_zone_elevation'] // 10) * 10
 
-    # Plot accident locations:
-    fig = go.Figure(go.Densitymap(
-        lat=lat_acc,
-        lon=long_acc,
-        z=[1] * len(lat_acc),  # value to calculate the density, adjustable
-        radius=15,  # radius of the density heatmap, adjustable
-        colorscale="YlOrRd",  # Color scale: Yellow to Red
-        opacity=0.6)
+    heatmap_data = filtered_df.groupby(['rounded_elevation', 'month']).size().unstack(fill_value=0)
+    heatmap_data = heatmap_data.reindex(columns=range(1, 13), fill_value=0)
+
+    fig = go.Figure(
+        go.Heatmap(
+            z=heatmap_data.values,  # Number of Accidents
+            x=month_names,          # Month
+            y=heatmap_data.index,   # Elevation
+            colorscale='ice',
+            reversescale=True,
+            colorbar=dict(
+                title='# Accidents',
+                titlefont=dict(
+                    color='gray',
+                    size=8,
+                    family='Arial, sans-serif'),
+                tickfont=dict(
+                    color='gray',
+                    size=8,
+                    family='Arial, sans-serif'))
+        )
     )
-
     fig.update_layout(
-        map_style="light",
-        map_zoom=6.4,  # Adjust zoom level
-        map_center={"lat": lat_acc.mean(), "lon": long_acc.mean()},  # Center map on the average location
-        margin={"r":0,"t":0,"l":0,"b":0}, # Remove margins around the map
-        height=300
+        xaxis=dict(
+            tickmode='array',
+            tickvals=list(range(0, 12)),
+            ticktext=month_names),
+        yaxis=dict(
+            title='Elevation  [m]',
+            titlefont=dict(color='gray', size=8, family='Arial, sans-serif'),
+        ),
+        margin=dict(l=0, r=0, t=0, b=0),
+        template='plotly_white',
+        height=250
     )
+    fig.update_yaxes(
+        tickfont=dict(color='gray', size=8, family='Arial, sans-serif')
+    )
+    fig.update_xaxes(
+        tickfont=dict(color='gray', size=8, family='Arial, sans-serif')
+    )
+
     return fig
 
 """
@@ -769,128 +836,74 @@ def imis_accident_map(altitude):
 Section 3.2: right column - Training Data 
 """
 
-
 @app.callback(
     Output('accidents_stats', 'figure'),
-    [Input('default_button', 'n_clicks'),
-     Input('temp_button', 'n_clicks'),
-     Input('wind_button', 'n_clicks'),
-     Input('new_snow_button', 'n_clicks'),
-     Input('snow_height_button', 'n_clicks')]
+    [Input('region_dropdown', 'value'),
+     Input('risk_group_checklist', 'value')]
 )
-def accidents_stats(default_button, temp_button, wind_button, new_snow_button, snow_height_button):
-    # Determine which button was last clicked, or use 'default_button' if none was clicked:
-    ctx = callback_context
-    if not ctx.triggered:
-        button_id = 'default_button'
-    else:
-        button_id = ctx.triggered[0]['prop_id'].split('.')[0]
+def accidents_stats(selected_region, selected_risk_groups):
+    filtered_df = kmeans_df.copy()
 
-    # Filter data by altitude -> to be implemented:
-    filtered_acc_df = acc_df
+    if selected_region:
+        filtered_df = filtered_df[filtered_df['alpine_region'] == selected_region]
+    else:
+        filtered_df = kmeans_df.copy()
 
     # Convert dates to datetime and add year and month columns:
-    filtered_acc_df['date'] = pd.to_datetime(filtered_acc_df['date'])
-    filtered_acc_df['year'] = filtered_acc_df['date'].dt.year
-    filtered_acc_df['month'] = filtered_acc_df['date'].dt.month
+    filtered_df['date'] = pd.to_datetime(filtered_df['date'])
+    filtered_df['year'] = filtered_df['date'].dt.year
+    filtered_df['month'] = filtered_df['date'].dt.month
 
     # Define winter months and corresponding names:
     winter_months = [11, 12, 1, 2, 3, 4]
     month_names = {11: 'November', 12: 'December', 1: 'January', 2: 'February', 3: 'March', 4: 'April'}
 
+    max_accidents = 0
+    for month in winter_months:
+        monthly_data = filtered_df[filtered_df['month'] == month]
+        yearly_counts = monthly_data.groupby('year').size()
+        max_accidents = max(max_accidents, yearly_counts.max())
+
     # Create subplot structure for two small multiples:
-    fig = make_subplots(rows=3, cols=3, subplot_titles=[month_names[m] for m in winter_months], vertical_spacing=0.05, horizontal_spacing=0.05)
+    fig = make_subplots(rows=3, cols=3, subplot_titles=[month_names[m] for m in winter_months], vertical_spacing=0.15, horizontal_spacing=0.05)
 
     # Set the font size for subplot titles specifically
     for i, month in enumerate(winter_months):
         fig['layout']['annotations'][i].update(font=dict(size=8))
 
-    # Check which plot to display based on the button clicked
-    if button_id == 'temp_button':
-        # Temperature histogram by month:
-        for idx, month in enumerate(winter_months):
-            monthly_data = filtered_acc_df[filtered_acc_df['month'] == month]
-            row, col = (idx // 3) + 1, (idx % 3) + 1
-            fig.add_trace(
-                go.Histogram(x=monthly_data['air_temp_mean_stations'], nbinsx=20, marker_color='blue'),
-                row=row, col=col
-            )
-            # Set y-axis range for the subplot
-            fig.update_yaxes(range=[0, 100], row=row, col=col)
+    # Plot accident counts as bar charts (default):
+    for idx, month in enumerate(winter_months):
+        monthly_data = filtered_df[filtered_df['month'] == month]
+        yearly_counts = monthly_data.groupby('year').size()
 
-    elif button_id == 'wind_button':
-        # Wind speed histogram by month:
-        for idx, month in enumerate(winter_months):
-            monthly_data = filtered_acc_df[filtered_acc_df['month'] == month]
-            row, col = (idx // 3) + 1, (idx % 3) + 1
-            fig.add_trace(
-                go.Histogram(x=monthly_data['wind_speed_mean_stations'], nbinsx=20, marker_color='green'),
-                row=row, col=col
-            )
-            # Set axis range for the subplot
-            fig.update_yaxes(range=[0, 200], row=row, col=col)
-            #fig.update_xaxes(range=[0, 10], row=row, col=col)
+        # Calculate row and column for the subplot
+        row = (idx // 3) + 1
+        col = (idx % 3) + 1
 
-    elif button_id == 'snow_height_button':
-        # Snow height histogram by month:
-        for idx, month in enumerate(winter_months):
-            monthly_data = filtered_acc_df[filtered_acc_df['month'] == month]
-            row, col = (idx // 3) + 1, (idx % 3) + 1
-            fig.add_trace(
-                go.Histogram(x=monthly_data['snow_height_mean_stations'], nbinsx=20, marker_color='orange'),
-                row=row, col=col
-            )
-            # Set y-axis range for the subplot
-            #fig.update_yaxes(range=[0, 100], row=row, col=col)
-
-    elif button_id == 'new_snow_button':
-        # New snow histogram by month:
-        for idx, month in enumerate(winter_months):
-            monthly_data = filtered_acc_df[filtered_acc_df['month'] == month]
-            row, col = (idx // 3) + 1, (idx % 3) + 1
-            fig.add_trace(
-                go.Histogram(x=monthly_data['new_snow_mean_stations'], nbinsx=20, marker_color='red'),
-                row=row, col=col
-            )
-            # Set y-axis range for the subplot
-            #fig.update_yaxes(range=[0, 100], row=row, col=col)
-
-    elif button_id == 'default_button':
-        # Plot accident counts as bar charts (default):
-        for idx, month in enumerate(winter_months):
-            monthly_data = filtered_acc_df[filtered_acc_df['month'] == month]
-            yearly_counts = monthly_data.groupby('year').size()
-
-            # Calculate row and column for the subplot
-            row = (idx // 3) + 1
-            col = (idx % 3) + 1
-
-            # Add bar chart to the respective subplot
-            fig.add_trace(
-                go.Bar(
-                    x=yearly_counts.index,
-                    y=yearly_counts.values,
-                    name=month_names[month],
-                    marker_color='darkblue'
-                ),
-                row=row, col=col
-            )
-            # Set y-axis range for the subplot
-            fig.update_yaxes(range=[0, 80], row=row, col=col)
+        # Add bar chart to the respective subplot
+        fig.add_trace(
+            go.Bar(
+                x=yearly_counts.index,
+                y=yearly_counts.values,
+                name=month_names[month],
+                marker_color='darkblue'
+            ),
+            row=row, col=col
+        )
+        # Set y-axis range for the subplot
+        fig.update_yaxes(range=[0, max_accidents], row=row, col=col)
 
     # Update layout
     fig.update_layout(
         #title='Number of accidents by year for each winter month',
         showlegend=False,
-        height=500,
-        margin=dict(t=15, b=0, l=0, r=0),
-        font=dict(size=8)
+        height=350,
+        margin=dict(t=20, b=0, l=0, r=0),
+        font=dict(size=8),
+        template='plotly_white'
     )
 
     return fig
-
-
-
 
 if __name__ == '__main__':
     app.run_server(debug=True)
