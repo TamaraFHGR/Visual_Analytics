@@ -5,8 +5,6 @@ import pandas as pd
 import numpy as np
 import dash_bootstrap_components as dbc
 import plotly.graph_objects as go
-from debugpy.common.timestamp import current
-from jedi.api.refactoring import inline
 from plotly.subplots import make_subplots
 from Data_Loader import (load_imis_stations, load_hist_data, load_daily,
                          load_kmeans_centers, load_pca_training, load_pca_live, load_kmeans_training)
