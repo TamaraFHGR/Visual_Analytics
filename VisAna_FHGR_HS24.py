@@ -195,19 +195,25 @@ app.layout = html.Div([
                     tooltip={"placement": "bottom", "always_visible": False}),
                 html.Div([ # region_dropdown
                     dcc.Dropdown(
-                        id='region_dropdown',
-                        options=['Western Alps', 'Southern Alps', 'Central Alps', 'Eastern Alps'],
+                        id='month_dropdown',
+                        options=[
+                            {'label': 'January', 'value': 1},
+                            {'label': 'February', 'value': 2},
+                            {'label': 'March', 'value': 3},
+                            {'label': 'April', 'value': 4},
+                            {'label': 'November', 'value': 11},
+                            {'label': 'December', 'value': 12}],
                             multi=False,
-                            placeholder="Select an Alpine Region...")
-                    ], className='region_dropdown')
+                            placeholder="Select a specific Month...")
+                    ], className='month_dropdown')
             ], className='training_map'),
             html.Div([ # training_data
                 dcc.Graph(id='accidents_stats'),
                 html.Div(
                     [dcc.Checklist(
                         id='risk_group_checklist',
-                        options=[{'label': group, 'value': group} for group in kmeans_df['risk_group'].unique()],
-                        value=kmeans_df['risk_group'].unique(),
+                        options=[{'label': group, 'value': group} for group in sorted(kmeans_df['risk_group'].unique())],
+                        value=['1 - very low', '2 - low', '5 - high'],
                         inline=True)
                     ], className='risk_group_checklist')
                 ], className='training_data'),
@@ -835,56 +841,61 @@ def imis_accident_map(selected_year):
 -----------------------------------------------------------------------------------------
 Section 3.2: right column - Training Data 
 """
-
 @app.callback(
     Output('accidents_stats', 'figure'),
-    [Input('region_dropdown', 'value'),
-     Input('risk_group_checklist', 'value')]
+        [Input('month_dropdown', 'value'),
+        Input('risk_group_checklist', 'value')]
 )
-def accidents_stats(selected_region, selected_risk_groups):
+def accidents_stats(selected_month, selected_risk_groups):
     filtered_df = kmeans_df.copy()
-
-    if selected_region:
-        filtered_df = filtered_df[filtered_df['alpine_region'] == selected_region]
 
     # Convert dates to datetime and add year and month columns:
     filtered_df['date'] = pd.to_datetime(filtered_df['date'])
-    filtered_df['year'] = filtered_df['date'].dt.year
     filtered_df['month'] = filtered_df['date'].dt.month
+    filtered_df['year'] = filtered_df['date'].dt.year
 
-    # Define winter months and corresponding names:
-    winter_months = [11, 12, 1, 2, 3, 4]
-    month_names = {11: 'November', 12: 'December', 1: 'January', 2: 'February', 3: 'March', 4: 'April'}
+    # Filter by selected month, if any:
+    if selected_month:
+        filtered_df = filtered_df[filtered_df['month'] == selected_month]
+
+    if selected_risk_groups:
+        filtered_df = filtered_df[filtered_df['risk_group'].isin(selected_risk_groups)]
+
+    # Define alpine regions for splitting subplots
+    alpine_regions = filtered_df['alpine_region'].unique()
+    region_names = {region: region for region in alpine_regions}  # Map for titles
 
     # Color mapping for clusters
-    color_map = {0: 'orange',  # 3 - moderate risk
-                 1: 'lightcoral',  # 4 - considerable risk
-                 2: 'yellow',  # 2 - low risk
-                 3: 'lightgreen',  # 1 - very low risk
-                 4: 'darkred'}  # 5 - high risk
+    color_map = {
+        3: 'lightgreen',  # 1 - very low risk
+        2: 'yellow',  # 2 - low risk
+        0: 'orange',  # 3 - moderate risk
+        1: 'lightcoral',  # 4 - considerable risk
+        4: 'darkred'  # 5 - high risk
+    }
 
     max_accidents = 0
-    for month in winter_months:
-        monthly_data = filtered_df[filtered_df['month'] == month]
-        yearly_counts = monthly_data.groupby(['year', 'k_cluster']).size().unstack(fill_value=0)
+    for region in alpine_regions:
+        region_data = filtered_df[filtered_df['alpine_region'] == region]
+        yearly_counts = region_data.groupby(['year', 'k_cluster']).size().unstack(fill_value=0)
         max_accidents = max(max_accidents, yearly_counts.sum(axis=1).max())
 
-    # Create subplot structure for two small multiples:
-    fig = make_subplots(rows=3, cols=3, subplot_titles=[month_names[m] for m in winter_months],
-                        vertical_spacing=0.15, horizontal_spacing=0.05)
+    # Create 2x2 subplot structure
+    fig = make_subplots(rows=2, cols=2, subplot_titles=[region_names[r] for r in alpine_regions],
+                        vertical_spacing=0.1, horizontal_spacing=0.1)
 
     # Set the font size for subplot titles specifically
-    for i, month in enumerate(winter_months):
-        fig['layout']['annotations'][i].update(font=dict(size=8))
+    for i, region in enumerate(alpine_regions):
+        fig['layout']['annotations'][i].update(font=dict(size=10))
 
     # Plot stacked bar charts:
-    for idx, month in enumerate(winter_months):
-        monthly_data = filtered_df[filtered_df['month'] == month]
-        yearly_counts = monthly_data.groupby(['year', 'k_cluster']).size().unstack(fill_value=0)
+    for idx, region in enumerate(alpine_regions):
+        region_data = filtered_df[filtered_df['alpine_region'] == region]
+        yearly_counts = region_data.groupby(['year', 'k_cluster']).size().unstack(fill_value=0)
 
         # Calculate row and column for the subplot
-        row = (idx // 3) + 1
-        col = (idx % 3) + 1
+        row = (idx // 2) + 1
+        col = (idx % 2) + 1
 
         # Add a trace for each cluster to stack them
         for cluster, color in color_map.items():
@@ -905,15 +916,16 @@ def accidents_stats(selected_region, selected_risk_groups):
 
     # Update layout
     fig.update_layout(
-        showlegend=True,
-        height=350,
-        margin=dict(t=20, b=0, l=0, r=0),
+        showlegend=False,
+        height=370,
+        margin=dict(t=15, b=0, l=0, r=0),
         font=dict(size=8),
         template='plotly_white',
         barmode='stack'  # Stacking bars
     )
 
     return fig
+
 
 if __name__ == '__main__':
     app.run_server(debug=True)

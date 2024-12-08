@@ -14,13 +14,13 @@
 .main_container {
     display: flex;
     width: 111%;
-    transform: scale(0.90);
+    transform: scale(0.895);
     transform-origin: top left;
 }
 /*-----------------------------------*/
 /* Header */
 .header {
-    width: 99.6%;
+    width: 99.5%;
     position: relative; /* Required for snowflakes */
     overflow: hidden; /* Prevent snowflakes from overflowing */
     margin: 3px 0px 3px 3px;
@@ -143,24 +143,24 @@
 /*-----------------------------------*/
 /* Station Dropdown Style */
 .station_dropdown,
-.region_dropdown {
+.month_dropdown {
     border-radius: 5px;
     box-shadow: 2px 2px 5px rgba(0, 0, 0, 0.2);
 }
 .station_dropdown .Select-control,
-.region_dropdown .Select-control {
+.month_dropdown .Select-control {
     font-size: 14px;
 }
 .station_dropdown .Select-menu,
-.region_dropdown .Select-menu{
+.month_dropdown .Select-menu{
     font-size: 14px;
 }
 .station_dropdown .Select-placeholder,
-.region_dropdown .Select-placeholder {
+.month_dropdown .Select-placeholder {
     font-size: 14px;
 }
-.region_dropdown {
-    margin-bottom: 20px;
+.month_dropdown {
+    margin-bottom: 10px;
 }
 /*-----------------------------------*/
 /* DatePicker Style*/
@@ -202,7 +202,8 @@
 /* Checklist Style */
 .risk_group_checklist {
     display: flex;
-    font-size: 14px;
+    font-family: var(--font-primary);
+    font-size: 12px;
     margin-left: 16px;
 }
 .risk_group_checklist input {
@@ -212,7 +213,7 @@
 }
 /* Label-Abstand vergrößern */
 .risk_group_checklist label {
-    margin-right: 8px;
+    margin-right: 24px;
 }
 /*-----------------------------------*/
 /* Font Styles */
