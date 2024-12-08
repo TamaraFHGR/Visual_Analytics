@@ -846,8 +846,6 @@ def accidents_stats(selected_region, selected_risk_groups):
 
     if selected_region:
         filtered_df = filtered_df[filtered_df['alpine_region'] == selected_region]
-    else:
-        filtered_df = kmeans_df.copy()
 
     # Convert dates to datetime and add year and month columns:
     filtered_df['date'] = pd.to_datetime(filtered_df['date'])
@@ -858,49 +856,61 @@ def accidents_stats(selected_region, selected_risk_groups):
     winter_months = [11, 12, 1, 2, 3, 4]
     month_names = {11: 'November', 12: 'December', 1: 'January', 2: 'February', 3: 'March', 4: 'April'}
 
+    # Color mapping for clusters
+    color_map = {0: 'orange',  # 3 - moderate risk
+                 1: 'lightcoral',  # 4 - considerable risk
+                 2: 'yellow',  # 2 - low risk
+                 3: 'lightgreen',  # 1 - very low risk
+                 4: 'darkred'}  # 5 - high risk
+
     max_accidents = 0
     for month in winter_months:
         monthly_data = filtered_df[filtered_df['month'] == month]
-        yearly_counts = monthly_data.groupby('year').size()
-        max_accidents = max(max_accidents, yearly_counts.max())
+        yearly_counts = monthly_data.groupby(['year', 'k_cluster']).size().unstack(fill_value=0)
+        max_accidents = max(max_accidents, yearly_counts.sum(axis=1).max())
 
     # Create subplot structure for two small multiples:
-    fig = make_subplots(rows=3, cols=3, subplot_titles=[month_names[m] for m in winter_months], vertical_spacing=0.15, horizontal_spacing=0.05)
+    fig = make_subplots(rows=3, cols=3, subplot_titles=[month_names[m] for m in winter_months],
+                        vertical_spacing=0.15, horizontal_spacing=0.05)
 
     # Set the font size for subplot titles specifically
     for i, month in enumerate(winter_months):
         fig['layout']['annotations'][i].update(font=dict(size=8))
 
-    # Plot accident counts as bar charts (default):
+    # Plot stacked bar charts:
     for idx, month in enumerate(winter_months):
         monthly_data = filtered_df[filtered_df['month'] == month]
-        yearly_counts = monthly_data.groupby('year').size()
+        yearly_counts = monthly_data.groupby(['year', 'k_cluster']).size().unstack(fill_value=0)
 
         # Calculate row and column for the subplot
         row = (idx // 3) + 1
         col = (idx % 3) + 1
 
-        # Add bar chart to the respective subplot
-        fig.add_trace(
-            go.Bar(
-                x=yearly_counts.index,
-                y=yearly_counts.values,
-                name=month_names[month],
-                marker_color='darkblue'
-            ),
-            row=row, col=col
-        )
+        # Add a trace for each cluster to stack them
+        for cluster, color in color_map.items():
+            if cluster in yearly_counts.columns:
+                fig.add_trace(
+                    go.Bar(
+                        x=yearly_counts.index,
+                        y=yearly_counts[cluster],
+                        name=f"Cluster {cluster}",
+                        marker_color=color,
+                        showlegend=(idx == 0)  # Only show legend for the first subplot
+                    ),
+                    row=row, col=col
+                )
+
         # Set y-axis range for the subplot
         fig.update_yaxes(range=[0, max_accidents], row=row, col=col)
 
     # Update layout
     fig.update_layout(
-        #title='Number of accidents by year for each winter month',
-        showlegend=False,
+        showlegend=True,
         height=350,
         margin=dict(t=20, b=0, l=0, r=0),
         font=dict(size=8),
-        template='plotly_white'
+        template='plotly_white',
+        barmode='stack'  # Stacking bars
     )
 
     return fig
