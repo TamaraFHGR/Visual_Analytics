@@ -127,6 +127,7 @@ app.layout = html.Div([
                 html.Div([ # trend_graph
                     html.H2('Trend Analysis'),
                     dcc.Graph(id='trend_analysis'),
+                    html.Div(
                     dcc.Slider(
                         id='moving_avg_window',
                         min=3,
@@ -134,24 +135,24 @@ app.layout = html.Div([
                         step=None,
                         value=7,
                         marks={3: '3 Days', 5: '5 Days', 7: '7 Days', 9: '9 Days'},
-                        tooltip={"placement": "bottom", "always_visible": False}
-                    )
+                        tooltip={"placement": "bottom", "always_visible": False}),
+                    id='slider_container')
                 ], className='trend_graph')
             ], className='weather_row'),
 
             # Risk Assessment Clusters and Matrix:
             html.Div([
                 html.Div([ # k_cluster_scatter
-                    html.H2('Daily Risk Clustering'),
-                    dcc.Graph(id='k_cluster_map'),
                     html.Div([
+                    html.H2('Daily Risk Clustering'),
                     dcc.DatePickerSingle(
                         id='date_dropdown',
                         min_date_allowed=date(2024, 10, 5),
                         max_date_allowed=pca_live_df['measure_date'].max(),
                         initial_visible_month=date.today() - timedelta(days=1),
                         display_format='DD-MM-YYYY')
-                        ], className='date_dropdown'),
+                        ], className='date_dropdown'), # flexbox
+                    dcc.Graph(id='k_cluster_map'),
                     ], className='k_cluster_scatter'),
                 html.Div([ # k_cluster_matrix
                     html.H2('Risk Assessment Matrix'),
@@ -177,8 +178,15 @@ app.layout = html.Div([
         # Column 2 of 2 (right):
         html.Div([ # right_column
             html.Div([ # training_map
-                html.H2('Historical Avalanche Accident since 1998'),
-                dcc.Graph(id='training_geomap'),
+                html.Div([ # feature_dropdown
+                    html.H2('Historical Avalanche Accident since 1998'),
+                    dcc.Dropdown(
+                            id='feature_dropdown',
+                            options=['Elevation','Snow Height','New Snow','Temperature','Wind'],
+                            multi=False,
+                            clearable=False,
+                            value='Elevation'),], className='feature_dropdown'),
+                    dcc.Graph(id='training_geomap'),
                 dcc.Slider(
                     id='year_slider',
                     min=1998,
@@ -190,7 +198,7 @@ app.layout = html.Div([
                         for year in range(1998, 2024)
                     },
                     tooltip={"placement": "bottom", "always_visible": False}),
-                html.Div([ # region_dropdown
+                html.Span([ # region_dropdown
                     dcc.Dropdown(
                         id='month_dropdown',
                         options=[
@@ -201,7 +209,8 @@ app.layout = html.Div([
                             {'label': 'November', 'value': 11},
                             {'label': 'December', 'value': 12}],
                             multi=False,
-                            placeholder="Select a specific Month...")
+                            placeholder="Select a specific Month..."),
+
                     ], className='month_dropdown')
             ], className='training_map'),
             html.Div([ # training_data
@@ -280,6 +289,18 @@ def store_active_button(*args):
 def update_button_classes(active_button):
     return ['active' if button_id == active_button else '' for button_id in button_ids]
 
+# Update Move_Avg_Window Sliders
+@app.callback(
+    Output('slider_container', 'style'),
+    Input('default_button', 'className')
+)
+def toggle_slider_visibility(default_button_class):
+    # Wenn der Default Button aktiv ist, wird der Slider ausgeblendet, d.h. wenn die className = 'active' ist:
+    if default_button_class == 'active':
+        return {'display': 'none'}
+    return {}
+
+
 # Callback to open the station document in a new tab:
 @app.callback(
     Output('url', 'href'),
@@ -337,10 +358,10 @@ def imis_live_map(active_button, selected_region, selected_canton, selected_stat
         )
         fig.update_layout(
             map_style="light",
-            map_zoom=6,
+            map_zoom=5.7,
             map_center={"lat": filtered_data['lat'].mean(), "lon": filtered_data['lon'].mean()},
             margin={"r": 0, "t": 0, "l": 0, "b": 0},
-            height=230
+            height=229
         )
 
     # Plot Heat Map "Temperature":
@@ -350,16 +371,16 @@ def imis_live_map(active_button, selected_region, selected_canton, selected_stat
             lat=daily_snow['lat'],
             lon=daily_snow['lon'],
             z=daily_snow['air_temp_mean_stations'],
-            radius=30,
+            radius=25,
             colorscale='blugrn',
             reversescale=True)
         )
         fig.update_layout(
             map_style="light",
-            map_zoom=6,
+            map_zoom=5.7,
             map_center={"lat": daily_snow['lat'].mean(), "lon": daily_snow['lon'].mean()},
             margin={"r": 0, "t": 0, "l": 0, "b": 0},
-            height=230
+            height=210
         )
 
     # Plot Heat Map "Wind":
@@ -369,16 +390,16 @@ def imis_live_map(active_button, selected_region, selected_canton, selected_stat
             lat=daily_snow['lat'],
             lon=daily_snow['lon'],
             z=daily_snow['wind_speed_max_stations'],
-            radius=30,
+            radius=25,
             colorscale='brwnyl',
             reversescale=False)
         )
         fig.update_layout(
             map_style="light",
-            map_zoom=6,
+            map_zoom=5.7,
             map_center={"lat": daily_snow['lat'].mean(), "lon": daily_snow['lon'].mean()},
             margin={"r": 0, "t": 0, "l": 0, "b": 0},
-            height=230
+            height=210
         )
 
     # Plot Heat Map "Snow Height":
@@ -388,16 +409,16 @@ def imis_live_map(active_button, selected_region, selected_canton, selected_stat
             lat=daily_snow['lat'],
             lon=daily_snow['lon'],
             z=daily_snow['snow_height_mean_stations'],
-            radius=30,
+            radius=25,
             colorscale='blues',
             reversescale=False)
         )
         fig.update_layout(
             map_style="light",
-            map_zoom=6,
+            map_zoom=5.7,
             map_center={"lat": daily_snow['lat'].mean(), "lon": daily_snow['lon'].mean()},
             margin={"r": 0, "t": 0, "l": 0, "b": 0},
-            height=230
+            height=210
         )
 
     # Plot Heat Map "New Snow":
@@ -407,16 +428,16 @@ def imis_live_map(active_button, selected_region, selected_canton, selected_stat
             lat=daily_snow['lat'],
             lon=daily_snow['lon'],
             z=daily_snow['new_snow_mean_stations'],
-            radius=30,
+            radius=25,
             colorscale='dense',
             reversescale=False)
         )
         fig.update_layout(
             map_style="light",
-            map_zoom=6,
+            map_zoom=5.7,
             map_center={"lat": daily_snow['lat'].mean(), "lon": daily_snow['lon'].mean()},
             margin={"r": 0, "t": 0, "l": 0, "b": 0},
-            height=230
+            height=210
         )
 
     return fig
@@ -542,7 +563,7 @@ def weather_trend(active_button, selected_region, selected_canton, selected_stat
     fig.update_layout(
         margin={"r": 0, "t": 0, "l": 0, "b": 0},
         template="plotly_white",
-        height=200,
+        height=190,
         legend=dict(
             font=dict(color='gray', size=8, family='Arial, sans-serif'),
             bgcolor='rgba(0, 0, 0, 0)',
@@ -745,7 +766,7 @@ def update_cluster_matrix(selected_region, selected_canton, selected_month_idx):
 
     fig.update_layout(
         template="plotly_white",
-        height=200,
+        height=190,
         margin={"r": 0, "t": 0, "l": 0, "b": 0},
         legend = dict(
             font=dict(color='gray', size=8, family='Arial, sans-serif'),
@@ -776,28 +797,59 @@ def update_cluster_matrix(selected_region, selected_canton, selected_month_idx):
 
 """
 -----------------------------------------------------------------------------------------
-Section 3.1: right column - Training Map
+Section 3.1: right column - Training Heat Map
 """
 @app.callback(
     Output('training_geomap', 'figure'),
-    [Input('year_slider', 'value')]
+    [Input('year_slider', 'value'),
+     Input('feature_dropdown', 'value')]
 )
-def imis_accident_map(selected_year):
+def imis_accident_map(selected_year, selected_feature):
     filtered_df = acc_df.copy()
     month_names = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'July', 'Aug', 'Sept', 'Oct', 'Nov', 'Dec']
 
     filtered_df['month'] = pd.to_datetime(filtered_df['date']).dt.month
     filtered_df = filtered_df[filtered_df['year'] == selected_year]
-    filtered_df['rounded_elevation'] = (filtered_df['start_zone_elevation'] // 10) * 10
 
-    heatmap_data = filtered_df.groupby(['rounded_elevation', 'month']).size().unstack(fill_value=0)
+    if selected_feature == 'Elevation':
+        filtered_df['rounded_elevation'] = (filtered_df['start_zone_elevation'] // 10) * 10
+        heatmap_data = filtered_df.groupby(['rounded_elevation', 'month']).size().unstack(fill_value=0)
+        y_axis_label = 'Elevation  [m]'
+        y_axis_values = heatmap_data.index
+
+    elif selected_feature == 'Snow Height':
+        filtered_df['snow_height_mean_stations'] = (filtered_df['snow_height_mean_stations'] // 10) * 10
+        heatmap_data = filtered_df.groupby(['snow_height_mean_stations', 'month']).size().unstack(fill_value=0)
+        y_axis_label = 'Snow Height  [cm]'
+        y_axis_values = heatmap_data.index
+
+    elif selected_feature == 'New Snow':
+        filtered_df['new_snow_mean_stations'] = filtered_df['new_snow_mean_stations']
+        heatmap_data = filtered_df.groupby(['new_snow_mean_stations', 'month']).size().unstack(fill_value=0)
+        y_axis_label = 'New Snow  [cm]'
+        y_axis_values = heatmap_data.index
+
+    elif selected_feature == 'Temperature':
+        filtered_df['air_temp_mean_stations'] = filtered_df['air_temp_mean_stations']
+        heatmap_data = filtered_df.groupby(['air_temp_mean_stations', 'month']).size().unstack(fill_value=0)
+        y_axis_label = 'Temperature  [°C]'
+        y_axis_values = heatmap_data.index
+
+    elif selected_feature == 'Wind':
+        filtered_df['wind_speed_max_stations'] = filtered_df['wind_speed_max_stations']
+        heatmap_data = filtered_df.groupby(['wind_speed_max_stations', 'month']).size().unstack(fill_value=0)
+        y_axis_label = 'Wind Speed  [m/s]'
+        y_axis_values = heatmap_data.index
+
+    # Reindex to ensure all months are represented, even if no data is available
     heatmap_data = heatmap_data.reindex(columns=range(1, 13), fill_value=0)
 
+    # Create the Heatmap figure
     fig = go.Figure(
         go.Heatmap(
             z=heatmap_data.values,  # Number of Accidents
             x=month_names,          # Month
-            y=heatmap_data.index,   # Elevation
+            y=y_axis_values,        # Elevation or Snow Height
             colorscale='ice',
             reversescale=True,
             colorbar=dict(
@@ -818,12 +870,12 @@ def imis_accident_map(selected_year):
             tickvals=list(range(0, 12)),
             ticktext=month_names),
         yaxis=dict(
-            title='Elevation  [m]',
+            title=y_axis_label,
             titlefont=dict(color='gray', size=8, family='Arial, sans-serif'),
         ),
         margin=dict(l=0, r=0, t=0, b=0),
         template='plotly_white',
-        height=230
+        height=220
     )
     fig.update_yaxes(
         tickfont=dict(color='gray', size=8, family='Arial, sans-serif')
@@ -914,7 +966,7 @@ def accidents_stats(selected_month, selected_risk_groups):
     # Update layout
     fig.update_layout(
         showlegend=False,
-        height=350,
+        height=320,
         margin=dict(t=15, b=0, l=0, r=0),
         font=dict(size=8),
         template='plotly_white',

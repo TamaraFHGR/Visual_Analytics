@@ -4,7 +4,7 @@
     --font-bold: bold;
     --font-light: lighter;
     --main-gap: 12px;
-    --font-size-h1: 20px;
+    --font-size-h1: 18px;
     --font-size-h2: 14px;
     --font-size-h3: 12px;
     --font-size-h4: 18px;
@@ -13,19 +13,20 @@
 /* Main Layout */
 .main_container {
     display: flex;
-    width: 111%;
-    transform: scale(0.899);
+    width: 100%;
+    transform: scale(1);
     transform-origin: top left;
 }
 /*-----------------------------------*/
 /* Header */
 .header {
-    width: 99.6%;
     position: relative; /* Required for snowflakes */
     overflow: hidden; /* Prevent snowflakes from overflowing */
-    margin: 2px 0px 3px 3px;
+    margin-left: 3px;
+    padding-top: 6px;
+    padding-bottom: 3px;
     display: flex;
-    padding: 10px 0;
+
     align-items: center;
     text-align: center;
     box-sizing: border-box;
@@ -35,13 +36,15 @@
 }
 .header h1 {
     margin-right: 25px; /* Space between H1 and H3 */
+    padding-top: 3px;
 }
 .sub_header {
-    margin: 2px 0px 6px 3px;
-    border: 1px solid #696969FF;
+    margin: 2px 0px 0px 0px;   /* Top, Right, Bottom, Left */
+    border: 2px solid #696969FF;
     border-radius: 5px;
-    padding: 12px 12px 12px 12px;
-    background-color: #f0f0f0;
+    padding: 7px 12px 7px 12px;
+    background-color: #dde3e3;
+    box-shadow: 0 4px 4px rgba(0, 0, 0.2, 0.3);
 }
 /*-----------------------------------*/
 /* Snowflakes in Header */
@@ -72,6 +75,7 @@
     width: 60%;
     flex-direction: column;
     padding-right : 3px;
+    margin-left: 3px;
 }
 /*-----------------------------------*/
 /* Container for the two cluster graphs */
@@ -80,10 +84,11 @@
 .right_column {
     display: flex;
     gap: var(--main-gap); /* Optional, for spacing between the graphs */
-    border: 1px solid #696969FF;
+    border: 2px solid #696969FF;
     border-radius: 5px;
-    padding: 6px 6px 12px 12px;
-    margin: 2px 0px 6px 3px;
+    padding: 6px 6px 3px 12px;
+    margin: 2px 0px 0px 0px;
+    box-shadow: 0 4px 4px rgba(0, 0, 0.2, 0.3);
 }
 /* Optional: Styling for the individual graph containers */
 .k_cluster_scatter,
@@ -99,12 +104,12 @@
     gap: 8px;
     align-content: center;
     justify-content: left;
-    padding-bottom: 10px;
+    padding-bottom: 8px;
 }
 .weather_buttons button {
     font-size: 14px;
-    height: 35px;
-    width: 160px;
+    height: 30px;
+    width: 168px;
     border: 1px solid grey;
     border-radius: 5px;
     background-color: #9ea5a8;
@@ -134,7 +139,7 @@
     display: flex;
     gap: 22px;
     margin-left: 12px;
-    margin-bottom: 12px;
+    margin-bottom: 8px;
     font-size: 14px;
 }
 .radio_group input {
@@ -142,37 +147,53 @@
 }
 /*-----------------------------------*/
 /* Station Dropdown Style */
-.station_dropdown,
-.month_dropdown {
+.station_dropdown {
     border-radius: 5px;
     box-shadow: 2px 2px 5px rgba(0, 0, 0, 0.2);
 }
 .station_dropdown .Select-control,
-.month_dropdown .Select-control {
+.month_dropdown .Select-control,
+.feature_dropdown .Select-control {
     font-size: 14px;
 }
 .station_dropdown .Select-menu,
-.month_dropdown .Select-menu{
+.month_dropdown .Select-menu,
+.feature_dropdown .Select-menu {
     font-size: 14px;
 }
 .station_dropdown .Select-placeholder,
-.month_dropdown .Select-placeholder {
+.month_dropdown .Select-placeholder,
+.feature_dropdown .Select-placeholder {
     font-size: 14px;
 }
 .month_dropdown {
     margin-bottom: 10px;
 }
 /*-----------------------------------*/
-/* DatePicker Style*/
-.date_dropdown .DatePickerInput {
-    border-radius: 5px;
-    border: 2px solid #ccc;
-    padding: 5px 10px;
-    font-size: 10px;
-    font-family: Arial, sans-serif;
+/* DatePicker Style */
+.date_dropdown {
+    display: flex;
+    align-items: center;
+    gap: 100px;
+    box-sizing: border-box;
 }
-.date_dropdown .DatePickerInput--focused {
-    border-color: #007bff;  /* Randfarbe, wenn der DatePicker fokussiert ist */
+.date_dropdown input {
+    padding: 5px 5px;
+    font-size: 12px;
+    text-align: center;
+    font-family: Arial, sans-serif;
+    background-color: #dde3e3;
+}
+/*-----------------------------------*/
+/* Feature Dropdown Style */
+.feature_dropdown {
+    display: flex;
+    flex-shrink: 0;
+    gap: 100px;
+}
+.feature_dropdown .Select-control {
+    width: 200px;
+
 }
 
 /*-----------------------------------*/
@@ -180,7 +201,7 @@
 .rc-slider-mark-text {
     white-space: nowrap;
     font-size: 8px;
-    color: gray;
+    color: #989ca8;
     font-family: Arial, sans-serif;
 }
 .rc-slider-tooltip {
@@ -231,6 +252,7 @@ h1 {
 h2 {
     font-size: var(--font-size-h2);
     font-weight: var(--font-bold);
+    padding-top: 8px;
 }
 h3 {
     font-size: var(--font-size-h3);
