@@ -13,9 +13,13 @@
 /* Main Layout */
 .main_container {
     display: flex;
-    width: 100%;
     transform: scale(1);
-    transform-origin: top left;
+    transform-origin: top center;
+    width: 100%;
+}
+html {
+    /*overflow-y: hidden;*/
+    overflow-x: hidden;
 }
 /*-----------------------------------*/
 /* Header */
@@ -130,17 +134,17 @@
 /* Radiobuttons Style */
 .region_radio {
     display: flex;
-    gap: 50px;
+    gap: 45px;
     margin-left: 12px;
     margin-bottom: 5px;
-    font-size: 14px;
+    font-size: 12px;
 }
 .canton_radio {
     display: flex;
-    gap: 22px;
+    gap: 18px;
     margin-left: 12px;
     margin-bottom: 8px;
-    font-size: 14px;
+    font-size: 12px;
 }
 .radio_group input {
     margin-right: 5px;
@@ -168,13 +172,14 @@
 }
 .month_dropdown {
     margin-bottom: 10px;
+    width: 150px;
 }
 /*-----------------------------------*/
 /* DatePicker Style */
 .date_dropdown {
     display: flex;
     align-items: center;
-    gap: 100px;
+    gap: 60px;
     box-sizing: border-box;
 }
 .date_dropdown input {
@@ -182,18 +187,21 @@
     font-size: 12px;
     text-align: center;
     font-family: Arial, sans-serif;
-    background-color: #dde3e3;
 }
 /*-----------------------------------*/
 /* Feature Dropdown Style */
 .feature_dropdown {
     display: flex;
     flex-shrink: 0;
-    gap: 100px;
+    gap: 110px;
 }
 .feature_dropdown .Select-control {
-    width: 200px;
+    width: 150px;
 
+}
+.feature_dropdown .h2 {
+/* not divide to next line */
+    white-space: nowrap;
 }
 
 /*-----------------------------------*/
@@ -201,7 +209,6 @@
 .rc-slider-mark-text {
     white-space: nowrap;
     font-size: 8px;
-    color: #989ca8;
     font-family: Arial, sans-serif;
 }
 .rc-slider-tooltip {
@@ -214,7 +221,7 @@
 .training_data {
     display: flex;
     flex-direction: column;
-    gap: 15px;
+    gap: 12px;
     justify-content: left;
     margin-left: var(--main-gap);
     margin-top: 0;
@@ -224,8 +231,8 @@
 .risk_group_checklist {
     display: flex;
     font-family: var(--font-primary);
-    font-size: 12px;
-    margin-left: 16px;
+    font-size: 11px;
+    margin-left: 14px;
 }
 .risk_group_checklist input {
     width: 15px;
@@ -234,7 +241,7 @@
 }
 /* Label-Abstand vergrößern */
 .risk_group_checklist label {
-    margin-right: 24px;
+    margin-right: 16px;
 }
 /*-----------------------------------*/
 /* Font Styles */

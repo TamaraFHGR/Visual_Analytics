@@ -179,7 +179,7 @@ app.layout = html.Div([
         html.Div([ # right_column
             html.Div([ # training_map
                 html.Div([ # feature_dropdown
-                    html.H2('Historical Avalanche Accident since 1998'),
+                    html.H2('Historical Avalanche Accidents'),
                     dcc.Dropdown(
                             id='feature_dropdown',
                             options=['Elevation','Snow Height','New Snow','Temperature','Wind'],
@@ -219,7 +219,7 @@ app.layout = html.Div([
                     [dcc.Checklist(
                         id='risk_group_checklist',
                         options=[{'label': group, 'value': group} for group in sorted(kmeans_df['risk_group'].unique())],
-                        value=['1 - very low', '2 - low', '5 - high'],
+                        value=['1 - very low', '2 - low', '4 - considerable'],
                         inline=True)
                     ], className='risk_group_checklist')
                 ], className='training_data'),
@@ -750,11 +750,11 @@ def update_cluster_matrix(selected_region, selected_canton, selected_month_idx):
 
     # Add custom legend:
     sorted_clusters = [
-        (3, "1 - very low risk", "lightgreen"),
-        (2, "2 - low risk", "yellow"),
-        (0, "3 - moderate risk", "orange"),
-        (1, "4 - considerable risk", "lightcoral"),
-        (4, "5 - high risk", "darkred")
+        (3, "very low risk", "lightgreen"),
+        (2, "low risk", "yellow"),
+        (0, "moderate risk", "orange"),
+        (1, "considerable risk", "lightcoral"),
+        (4, "high risk", "darkred")
     ]
 
     for k_value, label, color in sorted_clusters:
@@ -773,7 +773,7 @@ def update_cluster_matrix(selected_region, selected_canton, selected_month_idx):
             bgcolor='rgba(0, 0, 0, 0)',
             orientation='h',
             yanchor='bottom',
-            y=-0.4,
+            y=-0.6,
             xanchor='center',
             x=0.5),
         showlegend = True,
@@ -966,7 +966,7 @@ def accidents_stats(selected_month, selected_risk_groups):
     # Update layout
     fig.update_layout(
         showlegend=False,
-        height=320,
+        height=310,
         margin=dict(t=15, b=0, l=0, r=0),
         font=dict(size=8),
         template='plotly_white',
