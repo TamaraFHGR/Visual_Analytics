@@ -15,7 +15,7 @@
 .main_container {
     display: flex;
     transform: scale(1);
-    transform-origin: top center;
+    transform-origin: top left;
     width: 100%;
 }
 html {
