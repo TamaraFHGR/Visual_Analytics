@@ -8,6 +8,7 @@
     --font-size-h2: 14px;
     --font-size-h3: 12px;
     --font-size-h4: 18px;
+    --font-size-h5: 12px;
 }
 /*-----------------------------------*/
 /* Main Layout */
@@ -26,9 +27,10 @@ html {
 .header {
     position: relative; /* Required for snowflakes */
     overflow: hidden; /* Prevent snowflakes from overflowing */
-    margin-left: 3px;
+    margin-left: 2px;
+    margin-right: 2px;
     padding-top: 6px;
-    padding-bottom: 3px;
+    padding-bottom: 2px;
     display: flex;
 
     align-items: center;
@@ -40,13 +42,13 @@ html {
 }
 .header h1 {
     margin-right: 25px; /* Space between H1 and H3 */
-    padding-top: 3px;
+    padding-top: 2px;
 }
 .sub_header {
     margin: 2px 0px 0px 0px;   /* Top, Right, Bottom, Left */
     border: 2px solid #696969FF;
     border-radius: 5px;
-    padding: 7px 12px 7px 12px;
+    padding: 2px 12px 2px 12px;
     background-color: #dde3e3;
     box-shadow: 0 4px 4px rgba(0, 0, 0.2, 0.3);
 }
@@ -73,13 +75,14 @@ html {
 .right_column {
     width: 40%;
     flex-direction: column;
+    margin-right: 2px;
 }
 .left_column {
     display: flex;
     width: 60%;
     flex-direction: column;
     padding-right : 3px;
-    margin-left: 3px;
+    margin-left: 2px;
 }
 /*-----------------------------------*/
 /* Container for the two cluster graphs */
@@ -91,7 +94,7 @@ html {
     border: 2px solid #696969FF;
     border-radius: 5px;
     padding: 6px 6px 3px 12px;
-    margin: 2px 0px 0px 0px;
+    margin-top: 2px;
     box-shadow: 0 4px 4px rgba(0, 0, 0.2, 0.3);
 }
 /* Optional: Styling for the individual graph containers */
@@ -151,19 +154,35 @@ html {
 }
 /*-----------------------------------*/
 /* Station Dropdown Style */
+.dropdown_group {
+    display: flex;
+    align-items: center;
+    gap: 10px
+}
+.station_dropdown,
+.date_range {
+    flex: 1;
+}
+.station_dropdown {
+    width: 100%;
+}
+.station_dropdown .Select-control {
+    width: 100%;
+    font-size: 10px;
+}
 .station_dropdown {
     border-radius: 5px;
     box-shadow: 2px 2px 5px rgba(0, 0, 0, 0.2);
 }
-.station_dropdown .Select-control,
 .month_dropdown .Select-control,
 .feature_dropdown .Select-control {
     font-size: 14px;
+
 }
 .station_dropdown .Select-menu,
 .month_dropdown .Select-menu,
 .feature_dropdown .Select-menu {
-    font-size: 14px;
+    font-size: 10px;
 }
 .station_dropdown .Select-placeholder,
 .month_dropdown .Select-placeholder,
@@ -174,6 +193,8 @@ html {
     margin-bottom: 10px;
     width: 150px;
 }
+
+
 /*-----------------------------------*/
 /* DatePicker Style */
 .date_dropdown {
@@ -182,7 +203,8 @@ html {
     gap: 60px;
     box-sizing: border-box;
 }
-.date_dropdown input {
+.date_dropdown input,
+.date_range input{
     padding: 5px 5px;
     font-size: 12px;
     text-align: center;
@@ -271,6 +293,11 @@ h4 {
     font-size: var(--font-size-h4);
     font-weight: normal;
     color: dimgrey;
+}
+h5 {
+    font-size: var(--font-size-h5);
+    font-weight: normal;
+    color: black;
 }
 p {
     font-size: var(--font-size-h3);
