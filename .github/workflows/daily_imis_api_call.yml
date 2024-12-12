@@ -2,7 +2,7 @@ name: Run API Data Collection with Python Scripts Daily
 
 on:
   schedule:
-    - cron: '0 16 * * *'  # Daily at 16:00 UTC (18:00 local time)
+    - cron: '0 15 * * *'  # Daily at 15:00 UTC (17:00 local time)
   workflow_dispatch:  # allow manual workflow run
 
 jobs:
@@ -43,7 +43,7 @@ jobs:
         git config --global user.email 'github-actions@github.com'
         git add assets/API/daily/04_SLF_daily_imis_measurements.csv
         git add assets/API/daily/05_SLF_daily_imis_snow.csv
-        git commit -m "Update CSV files from workflow run"
+        git commit -m "New Data Collection from API"
         git push
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
