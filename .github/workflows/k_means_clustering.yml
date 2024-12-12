@@ -1,8 +1,8 @@
-name: Run API Data Collection with Python Scripts Daily
+name: Run K-Means Clustering of daily live data
 
 on:
   schedule:
-    - cron: '0 15 * * *'  # Daily at 15:00 UTC (17:00 local time)
+    - cron: '40 15 * * *'  # Daily at 15:40 UTC (17:40 local time)
   workflow_dispatch:  # allow manual workflow run
 
 jobs:
@@ -26,24 +26,19 @@ jobs:
       run: |
         pip install -r requirements.txt
 
-    - name: Run Global Data Collection
+    - name: Run K-Means Clustering of daily live data
       working-directory: assets/API/
       run: |
-        python 01_API_Load_IMIS_Daily_Data.py
-
-    - name: Run Snow Data Collection
-      working-directory: assets/API/
-      run: |
-        python 02_API_Load_IMIS_Daily_Snow.py
+        python 06_K_Means_Clustering.py
 
     # Commit and push changes to repository
     - name: Commit and push changes
       run: |
         git config --global user.name 'github-actions'
         git config --global user.email 'github-actions@github.com'
-        git add assets/API/daily/04_SLF_daily_imis_measurements.csv
-        git add assets/API/daily/05_SLF_daily_imis_snow.csv
-        git commit -m "New Data Collection from API"
-        git push
+        git add assets/API/daily/08_PCA_Trainings_Data.csv
+        git add assets/API/daily/09_PCA_Live_Data.csv
+        git commit -m "Update PCA training and live data CSV files"
+        git push  
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

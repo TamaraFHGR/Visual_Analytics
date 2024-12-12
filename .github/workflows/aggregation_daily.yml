@@ -2,7 +2,7 @@ name: Run Aggregation to daily data
 
 on:
   schedule:
-    - cron: '30 17 * * *'  # Daily at 17:30 UTC (19:30 local time)
+    - cron: '20 15 * * *'  # Daily at 15:20 UTC (17:20 local time)
   workflow_dispatch:  # allow manual workflow run
 
 jobs:
@@ -37,7 +37,7 @@ jobs:
         git config --global user.name 'github-actions'
         git config --global user.email 'github-actions@github.com'
         git add assets/API/daily/04_SLF_daily_imis_measurements_daily.csv
-        git commit -m "Update daily aggregated CSV files for imis measurements"
+        git commit -m "Daily aggregated measurements"
         git push  
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
