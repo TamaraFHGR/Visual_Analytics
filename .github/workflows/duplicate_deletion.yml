@@ -2,7 +2,7 @@ name: Run Duplicate Deletion
 
 on:
   schedule:
-    - cron: '0 17 * * *'  # Daily at 17:00 UTC (19:00 local time)
+    - cron: '10 15 * * *'  # Daily at 15:10 UTC (17:10 local time)
   workflow_dispatch:  # allow manual workflow run
 
 jobs:
@@ -38,7 +38,7 @@ jobs:
         git config --global user.email 'github-actions@github.com'
         git add assets/API/daily/04_SLF_daily_imis_measurements_clean.csv
         git add assets/API/daily/05_SLF_daily_imis_snow_clean.csv
-        git commit -m "Update clean CSV files from duplicate deletion"
+        git commit -m "Duplicate Deletion"
         git push
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
