@@ -29,8 +29,8 @@ html {
     overflow: hidden; /* Prevent snowflakes from overflowing */
     margin-left: 2px;
     margin-right: 2px;
-    padding-top: 6px;
-    padding-bottom: 2px;
+    padding-top: 12px;
+    padding-bottom: 6px;
     display: flex;
 
     align-items: center;
@@ -42,13 +42,13 @@ html {
 }
 .header h1 {
     margin-right: 25px; /* Space between H1 and H3 */
-    padding-top: 2px;
+    padding-top: 3px;
 }
 .sub_header {
     margin: 2px 0px 0px 0px;   /* Top, Right, Bottom, Left */
     border: 2px solid #696969FF;
     border-radius: 5px;
-    padding: 2px 12px 2px 12px;
+    padding: 4px 12px 4px 12px;
     background-color: #dde3e3;
     box-shadow: 0 4px 4px rgba(0, 0, 0.2, 0.3);
 }
@@ -94,7 +94,7 @@ html {
     border: 2px solid #696969FF;
     border-radius: 5px;
     padding: 6px 6px 3px 12px;
-    margin-top: 2px;
+    margin-top: 3px;
     box-shadow: 0 4px 4px rgba(0, 0, 0.2, 0.3);
 }
 /* Optional: Styling for the individual graph containers */
@@ -115,7 +115,7 @@ html {
 }
 .weather_buttons button {
     font-size: 14px;
-    height: 30px;
+    height: 35px;
     width: 168px;
     border: 1px solid grey;
     border-radius: 5px;
