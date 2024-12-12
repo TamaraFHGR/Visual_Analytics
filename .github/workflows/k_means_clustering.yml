@@ -1,0 +1,44 @@
+name: Run K-Means Clustering of daily live data
+
+on:
+  schedule:
+    - cron: '30 18 * * *'  # Daily at 18:30 UTC (20:30 local time)
+  workflow_dispatch:  # allow manual workflow run
+
+jobs:
+  run-scripts:
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: write  # allow workflow to write to repository
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v3
+
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.12'
+
+    - name: Install dependencies
+      working-directory: assets/API/
+      run: |
+        pip install -r requirements.txt
+
+    - name: Run K-Means Clustering of daily live data
+      working-directory: assets/API/
+      run: |
+        python 06_K_Means_Clustering.py
+
+    # Commit and push changes to repository
+    - name: Commit and push changes
+      run: |
+        git config --global user.name 'github-actions'
+        git config --global user.email 'github-actions@github.com'
+        git add assets/API/daily/08_PCA_Trainings_Data.csv
+        git add assets/API/daily/09_PCA_Live_Data.csv
+        git commit -m "Update merged daily CSV files will all live data"
+        git push  
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
