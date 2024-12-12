@@ -38,7 +38,7 @@ jobs:
         git config --global user.email 'github-actions@github.com'
         git add assets/API/daily/08_PCA_Trainings_Data.csv
         git add assets/API/daily/09_PCA_Live_Data.csv
-        git commit -m "Update merged daily CSV files will all live data"
+        git commit -m "Update PCA training and live data CSV files"
         git push  
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
