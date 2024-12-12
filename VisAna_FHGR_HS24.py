@@ -115,14 +115,13 @@ app.layout = html.Div([
                         placeholder="Select any weather station... (ideally not more than 3)",
                         value=[])
                     ], className='station_dropdown'),
-                html.Span(html.H5('Date range for Trend Analysis:')),
                 html.Span([ # date_range
                     dcc.DatePickerRange(
                         id='date_range',
                         min_date_allowed=daily_snow_df['measure_date'].min(),
                         max_date_allowed=daily_snow_df['measure_date'].max(),
                         initial_visible_month=date.today() - timedelta(days=1),
-                        start_date=pd.to_datetime(daily_snow_df['measure_date']).max() - timedelta(days=21),
+                        start_date=pd.to_datetime(daily_snow_df['measure_date']).max() - timedelta(days=28),
                         end_date=daily_snow_df['measure_date'].max(),
                         display_format='DD-MM-YYYY')
                     ], className='date_range'),
@@ -137,16 +136,18 @@ app.layout = html.Div([
                     dcc.Graph(id='live_geomap')
                 ], className='map_graph'),
                 html.Div([ # trend_graph
-                    html.H2('Trend Analysis'),
+                    html.H2('Snow and Weather Trend Analysis since 2020'),
                     dcc.Graph(id='trend_analysis'),
                     html.Div(
                     dcc.Slider(
                         id='moving_avg_window',
                         min=3,
-                        max=9,
+                        max=21,
                         step=None,
                         value=7,
-                        marks={3: '3 Days', 5: '5 Days', 7: '7 Days', 9: '9 Days'},
+                        marks={3: '3 Days', 5: '5 Days', 7: '7 Days', 9: '9 Days',
+                               11: '11 Days', 13: '13 Days', 15: '15 Days', 17: '17 Days',
+                               19: '19 Days', 21: '21 Days'},
                         tooltip={"placement": "bottom", "always_visible": False}),
                     id='slider_container')
                 ], className='trend_graph')
@@ -168,7 +169,7 @@ app.layout = html.Div([
                     dcc.Graph(id='k_cluster_map'),
                     ], className='k_cluster_scatter'),
                 html.Div([ # k_cluster_matrix
-                    html.H2('Risk Assessment Matrix'),
+                    html.H2('Risk Assessment Matrix Winter 2024/25'),
                     dcc.Graph(id='cluster_matrix'),
                     dcc.Slider(
                         id='month_slider',
@@ -192,7 +193,7 @@ app.layout = html.Div([
         html.Div([ # right_column
             html.Div([ # training_map
                 html.Div([ # feature_dropdown
-                    html.H2('Historical Avalanche Accidents'),
+                    html.H2('Avalanche Accidents 1998-2023'),
                     dcc.Dropdown(
                             id='feature_dropdown',
                             options=['Elevation','Snow Height','New Snow','Temperature','Wind'],
@@ -566,7 +567,7 @@ def weather_trend(active_button, selected_region, selected_canton, selected_stat
                 autorange=True,
                 showgrid=False,
                 showticklabels=True,
-                tickformat="%d-%b",
+                tickformat="%d-%b-%Y",
                 tickfont=dict(color='gray', size=8, family='Arial, sans-serif'))
 
             fig.update_yaxes(
@@ -630,9 +631,9 @@ def weather_trend(active_button, selected_region, selected_canton, selected_stat
         )
         fig.update_xaxes(
                 autorange=True,
-                showgrid=False,
+                showgrid=True,
                 showticklabels=True,
-                tickformat="%d-%b",
+                tickformat="%d-%b-%Y",
                 tickfont=dict(color='gray', size=8, family='Arial, sans-serif'))
 
         fig.update_yaxes(
@@ -696,9 +697,9 @@ def weather_trend(active_button, selected_region, selected_canton, selected_stat
         )
         fig.update_xaxes(
             autorange=True,
-            showgrid=False,
+            showgrid=True,
             showticklabels=True,
-            tickformat="%d-%b",
+            tickformat="%d-%b-%Y",
             tickfont=dict(color='gray', size=8, family='Arial, sans-serif'))
 
         fig.update_yaxes(
@@ -763,9 +764,9 @@ def weather_trend(active_button, selected_region, selected_canton, selected_stat
         )
         fig.update_xaxes(
             autorange=True,
-            showgrid=False,
+            showgrid=True,
             showticklabels=True,
-            tickformat="%d-%b",
+            tickformat="%d-%b-%Y",
             tickfont=dict(color='gray', size=8, family='Arial, sans-serif'))
 
         fig.update_yaxes(
@@ -829,9 +830,9 @@ def weather_trend(active_button, selected_region, selected_canton, selected_stat
         )
         fig.update_xaxes(
             autorange=True,
-            showgrid=False,
+            showgrid=True,
             showticklabels=True,
-            tickformat="%d-%b",
+            tickformat="%d-%b-%Y",
             tickfont=dict(color='gray', size=8, family='Arial, sans-serif'))
 
         fig.update_yaxes(
@@ -852,9 +853,9 @@ Section 2.1: left column - Risk Clustering (PCA)
 )
 def k_means_clusters(selected_date):
     if selected_date:
-        filtered_pca_live_df = pca_live_df[pca_live_df['measure_date'] == selected_date]
+        filtered_pca_live = pca_live_df[pca_live_df['measure_date'] == selected_date]
     else:
-        filtered_pca_live_df = pca_live_df[pca_live_df['measure_date'] == pca_live_df['measure_date'].max()]
+        filtered_pca_live = pca_live_df[pca_live_df['measure_date'] == pca_live_df['measure_date'].max()]
 
     # Plot the K-Means clusters, based on PCA data:
     fig = go.Figure()
@@ -873,8 +874,8 @@ def k_means_clusters(selected_date):
 
         # Add the live PCA data from the latest update:
         fig.add_trace(go.Scatter(
-            x=filtered_pca_live_df['PCA1'],
-            y=filtered_pca_live_df['PCA2'],
+            x=filtered_pca_live['PCA1'],
+            y=filtered_pca_live['PCA2'],
             mode='markers',
             marker=dict(size=4, color='black', opacity=0.7),
             name='Live Data',
@@ -937,11 +938,30 @@ Section 2.2: left column - Risk Assessment Matrix
      Input('canton_radio', 'value'),
      Input('month_slider', 'value')]
 )
-def update_cluster_matrix(selected_region, selected_canton, selected_month_idx):
+def cluster_matrix(selected_region, selected_canton, selected_month_idx):
     filtered_data = pca_live_df.copy()
 
     if not np.issubdtype(filtered_data['measure_date'].dtype, np.datetime64):
         filtered_data['measure_date'] = pd.to_datetime(filtered_data['measure_date'], errors='coerce')
+
+    # Filter for the year 2024
+    filtered_data = filtered_data[filtered_data['measure_date'].dt.year == 2024]
+
+    # Handle future slider values not as error:
+    if selected_month_idx is not None:
+        selected_month = month_mapping[selected_month_idx]
+
+        # Bestimme das Jahr dynamisch basierend auf dem Slider-Wert
+        if selected_month_idx >= 3:  # Ab Januar (Index 3) ist es 2025
+            selected_year = 2025
+        else:  # Monate bis Dezember (Index 0-2) gehören zu 2024
+            selected_year = 2024
+
+        # Filtere nach dem entsprechenden Monat und Jahr
+        filtered_data = filtered_data[
+            (filtered_data['measure_date'].dt.year == selected_year) &
+            (filtered_data['measure_date'].dt.month == selected_month)
+            ]
 
     if selected_region and selected_region != 'Entire Alpine Region':
         valid_regions = all_regions.get(selected_region, [])
@@ -953,9 +973,34 @@ def update_cluster_matrix(selected_region, selected_canton, selected_month_idx):
     else:
         group_by_column = 'canton_code'
 
-    if selected_month_idx is not None:
-        selected_month = month_mapping[selected_month_idx]
-        filtered_data = filtered_data[filtered_data['measure_date'].dt.month == month_mapping[selected_month_idx]]
+    if filtered_data.empty:
+        fig = go.Figure()
+        fig.add_annotation(
+            text="No future data available",
+            xref="paper",
+            yref="paper",
+            x=0.5,
+            y=0.5,
+            showarrow=False,
+            font=dict(size=16, color="gray")
+        )
+        fig.update_layout(
+            template="plotly_white",
+            height=190,
+            margin={"r": 0, "t": 0, "l": 0, "b": 0}
+        )
+        fig.update_xaxes(
+            autorange=True,
+            showgrid=False,
+            showticklabels=False,
+
+        )
+        fig.update_yaxes(
+            autorange=True,
+            showgrid=False,
+            showticklabels=False,
+        )
+        return fig
 
     # Create a matrix of k_cluster values for each station and measure date
     aggregated_data = filtered_data.groupby([group_by_column, 'measure_date'])['k_cluster'].mean().reset_index()
@@ -1030,7 +1075,9 @@ def update_cluster_matrix(selected_region, selected_canton, selected_month_idx):
     )
 
     fig.update_xaxes(
-        autorange=True,
+        tickmode='array',
+        tickvals=measure_dates[::2],
+        #autorange=True,
         showgrid=False,
         showticklabels=True,
         tickformat="%d-%b",
