@@ -46,3 +46,8 @@ jobs:
         fi
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+    # Trigger Webhook
+    - name: Trigger Render Deploy Hook
+      run: |
+        curl -X POST https://api.render.com/deploy/srv-ctavj8i3esus739dp7ug?key=k0CNn78Rd5A
