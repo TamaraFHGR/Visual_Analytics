@@ -2,6 +2,9 @@ import pandas as pd
 from sklearn.preprocessing import StandardScaler
 from sklearn.cluster import KMeans
 from sklearn.decomposition import PCA
+import os
+
+os.environ["LOKY_MAX_CPU_COUNT"] = "4"
 
 acc_df = pd.read_csv('daily/07_K-Means_Trainings_Data.csv', sep=',', skiprows=0)
 live_df = pd.read_csv('daily/06_SLF_daily_imis_all_live_data.csv', sep=';', skiprows=0)
