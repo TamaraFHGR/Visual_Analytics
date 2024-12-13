@@ -369,7 +369,7 @@ def imis_live_map(active_button, selected_region, selected_canton, selected_stat
             lon=filtered_data['lon'],
             mode='markers',
             marker=go.scattermap.Marker(
-                size=12,
+                size=8,
                 symbol='mountain',
                 color='black'),
             text=filtered_data['combined'],
@@ -378,7 +378,7 @@ def imis_live_map(active_button, selected_region, selected_canton, selected_stat
         )
         fig.update_layout(
             map_style="light",
-            map_zoom=5.7,
+            map_zoom=5.5,
             map_center={"lat": filtered_data['lat'].mean(), "lon": filtered_data['lon'].mean()},
             margin={"r": 0, "t": 0, "l": 0, "b": 0},
             height=200
