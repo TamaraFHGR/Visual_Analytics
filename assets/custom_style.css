@@ -85,11 +85,11 @@ html {
     margin-left: 2px;
 }
 /*-----------------------------------*/
-/* Container for the two cluster graphs */
+/* Container Layout */
 .k_cluster_row,
 .weather_row,
-.right_column {
-    display: flex;
+.right_column,
+.k_cluster_centers {
     gap: var(--main-gap); /* Optional, for spacing between the graphs */
     border: 2px solid #696969FF;
     border-radius: 5px;
@@ -103,6 +103,22 @@ html {
 .map_graph,
 .trend_graph{
     width: 48%;  /* Adjust the width as necessary */
+}
+.k_cluster_row,
+.weather_row,
+.right_column {
+    display: flex;
+}
+/*-----------------------------------*/
+/* Training Data Graphs */
+.training_geomap,
+.training_data {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    justify-content: left;
+    margin-left: var(--main-gap);
+    margin-top: 0;
 }
 /*-----------------------------------*/
 /* Buttons Style */
@@ -153,81 +169,135 @@ html {
     margin-right: 5px;
 }
 /*-----------------------------------*/
-/* Station Dropdown Style */
+/* Row with station dropdown and date range (Subheader Part) */
 .dropdown_group {
     display: flex;
+    justify-content: space-between;
     align-items: center;
-    gap: 10px
-}
-.station_dropdown,
-.date_range {
-    flex: 1;
-}
-.station_dropdown {
     width: 100%;
 }
-.station_dropdown .Select-control {
-    width: 100%;
-    font-size: 10px;
-}
+/*-----------------------------------*/
+/* Station Dropdown Style (Subheader Part) */
 .station_dropdown {
+    flex: 6; /* takes 60% of the line space */
+    margin-right: 15px;
+    background-color: transparent;
+    border-color: transparent;
     border-radius: 5px;
     box-shadow: 2px 2px 5px rgba(0, 0, 0, 0.2);
 }
-.month_dropdown .Select-control,
-.feature_dropdown .Select-control {
-    font-size: 14px;
-
+.station_dropdown .Select-control {
+    font-size: 8px;
 }
-.station_dropdown .Select-menu,
-.month_dropdown .Select-menu,
-.feature_dropdown .Select-menu {
-    font-size: 10px;
-}
-.station_dropdown .Select-placeholder,
-.month_dropdown .Select-placeholder,
-.feature_dropdown .Select-placeholder {
+.station_dropdown .Select-placeholder {
     font-size: 14px;
 }
-.month_dropdown {
-    margin-bottom: 10px;
-    width: 150px;
+.station_dropdown .Select-menu {
+    font-size: 12px;
 }
-
-
 /*-----------------------------------*/
-/* DatePicker Style */
+/* Date Range Style (Subheader Part) */
+.date_range {
+    flex: 3; /* takes 30% of the line space */
+    background-color: transparent;
+    border-color: transparent;
+}
+.date_range input {
+    padding: 5px 5px;
+    font-size: 12px;
+    text-align: center;
+    font-family: Arial, sans-serif;
+    border-radius: 5px;
+    box-shadow: 2px 2px 5px rgba(0, 0, 0, 0.2);
+    border: 1px solid #ccc;
+    background-color: white;
+}
+.DateInput {
+    background-color: transparent; /* Entfernt Hintergrund der einzelnen Eingabefelder */
+    border: none; /* Optional: entfernt jegliche Ränder */
+}
+.DateRangePickerInput {
+  background-color: transparent;
+    border-color: transparent;
+}
+/*-----------------------------------*/
+/* Date Dropdown Style (Clustering Part) */
 .date_dropdown {
     display: flex;
+    justify-content: space-between;
     align-items: center;
-    gap: 60px;
+    width: 100%;
     box-sizing: border-box;
+    border-radius: 5px;
+    box-shadow: 2px 2px 5px rgba(0, 0, 0, 0.2);
 }
-.date_dropdown input,
-.date_range input{
+.date_dropdown .DatePickerSingle {
+    flex: 0;
+}
+.date_dropdown input {
     padding: 5px 5px;
     font-size: 12px;
     text-align: center;
     font-family: Arial, sans-serif;
 }
+.date_dropdown h2 {
+    margin: 0;
+    flex: 1;
+}
 /*-----------------------------------*/
-/* Feature Dropdown Style */
+/* Feature Dropdown Style (Accident Heatmap Part) */
 .feature_dropdown {
     display: flex;
-    flex-shrink: 0;
-    gap: 110px;
-}
-.feature_dropdown .Select-control {
-    width: 150px;
-
+    justify-content: space-between;
+    align-items: center;
+    width: 100%;
+    background-color: transparent;
+    border-color: transparent;
+    margin-bottom: 6px;
 }
 .feature_dropdown .h2 {
-/* not divide to next line */
-    white-space: nowrap;
+    margin: 0;
+    flex: 1;
+}
+.feature_dropdown .Select-control {
+    width: 200px;
+    font-size: 14px;
+    border-radius: 5px;
+    box-shadow: 2px 2px 5px rgba(0, 0, 0, 0.2);
+}
+.feature_dropdown .Select-menu {
+    font-size: 12px;
 }
 
 /*-----------------------------------*/
-/* Slider Design */
+/* Month Dropdown Style (Accident Stats Part) */
+.month_dropdown {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 6px;
+    width: 100%;
+}
+.month_dropdown h2 {
+    flex: 1;
+}
+.month_dropdown .Dropdown {
+    flex: 0;
+}
+.month_dropdown .Select-control {
+    width: 200px;
+    font-size: 12px;
+    border-radius: 5px;
+    box-shadow: 2px 2px 5px rgba(0, 0, 0, 0.2);
+}
+.month_dropdown .Select-menu {
+    font-size: 12px;
+}
+.month_dropdown .Select-placeholder {
+    font-size: 14px;
+}
+/*-----------------------------------*/
+/* Slider Design (Risk Assessment and Accident Heatmap) */
 .rc-slider-mark-text {
     white-space: nowrap;
     font-size: 8px;
@@ -236,20 +306,8 @@ html {
 .rc-slider-tooltip {
     font-size: 8px;
 }
-
 /*-----------------------------------*/
-/* Training Data Graphs */
-.training_geomap,
-.training_data {
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
-    justify-content: left;
-    margin-left: var(--main-gap);
-    margin-top: 0;
-}
-/*-----------------------------------*/
-/* Checklist Style */
+/* Checklist Style (Accident Stats Part) */
 .risk_group_checklist {
     display: flex;
     font-family: var(--font-primary);
@@ -281,7 +339,7 @@ h1 {
 h2 {
     font-size: var(--font-size-h2);
     font-weight: var(--font-bold);
-    padding-top: 8px;
+    padding-top: 6px;
 }
 h3 {
     font-size: var(--font-size-h3);

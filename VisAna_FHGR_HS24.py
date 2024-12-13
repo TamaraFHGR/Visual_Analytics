@@ -187,13 +187,18 @@ app.layout = html.Div([
                         tooltip={"placement": "bottom", "always_visible": False})
                     ], className='k_cluster_matrix'),
                 ], className='k_cluster_row'),
+            html.Div([ # k_luster_centers
+                html.H2('Risk Categories and Similarity Measures'),
+                html.Img(src='/assets/Cluster_Means.jpg',
+                         style={'width': '93%', 'height': 'auto', 'padding-left': '50px'}),
+                ], className='k_cluster_centers'),
         ], style={'display': 'inline-block'}, className='left_column'),
 
         # Column 2 of 2 (right):
         html.Div([ # right_column
             html.Div([ # training_map
                 html.Div([ # feature_dropdown
-                    html.H2('Avalanche Accidents 1998-2023'),
+                    html.H2('Avalanche Accidents since 1998-2023'),
                     dcc.Dropdown(
                             id='feature_dropdown',
                             options=['Elevation','Snow Height','New Snow','Temperature','Wind'],
@@ -212,7 +217,9 @@ app.layout = html.Div([
                         for year in range(1998, 2024)
                     },
                     tooltip={"placement": "bottom", "always_visible": False}),
-                html.Span([ # region_dropdown
+                html.Hr(),
+                html.Div([ # region_dropdown
+                    html.H2('Avalanche Accidents by Region'),
                     dcc.Dropdown(
                         id='month_dropdown',
                         options=[
@@ -224,7 +231,6 @@ app.layout = html.Div([
                             {'label': 'December', 'value': 12}],
                             multi=False,
                             placeholder="Select a specific Month..."),
-
                     ], className='month_dropdown')
             ], className='training_map'),
             html.Div([ # training_data
@@ -1172,7 +1178,7 @@ def imis_accident_map(selected_year, selected_feature):
         ),
         margin=dict(l=0, r=0, t=0, b=0),
         template='plotly_white',
-        height=220
+        height=280
     )
     fig.update_yaxes(
         tickfont=dict(color='gray', size=8, family='Arial, sans-serif')
@@ -1232,7 +1238,7 @@ def accidents_stats(selected_month, selected_risk_groups):
 
     # Set the font size for subplot titles specifically
     for i, region in enumerate(alpine_regions):
-        fig['layout']['annotations'][i].update(font=dict(size=10, family='Arial, sans serif', color='black'))
+        fig['layout']['annotations'][i].update(font=dict(size=12, family='Arial, sans serif', color='black'))
 
     # Plot stacked bar charts:
     for idx, region in enumerate(alpine_regions):
@@ -1274,7 +1280,7 @@ def accidents_stats(selected_month, selected_risk_groups):
     # Update layout
     fig.update_layout(
         showlegend=False,
-        height=275,
+        height=320,
         margin=dict(t=15, b=0, l=0, r=0),
         font=dict(size=8),
         template='plotly_white',
@@ -1285,4 +1291,4 @@ def accidents_stats(selected_month, selected_risk_groups):
 
 
 if __name__ == '__main__':
-    app.run_server(host="0.0.0.0", port=8080)
+    app.run_server(debug=True)
