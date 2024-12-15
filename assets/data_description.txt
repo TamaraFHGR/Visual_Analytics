@@ -33,18 +33,18 @@ kmeans_df = load_kmeans_training()		--> 3.2						assets/K-Means_Clustering/01_hi
 
 Git Workflow:
 *************
-1) daily_imis_api_call.yml				--> # Daily at 15:00 UTC (17:00 local time)
+1) daily_imis_api_call.yml				--> # Daily at 15:00 UTC (16:00 local time)
 	- 01_API_Load_IMIS_Daily_Data.py
 	- 02_API_Load_IMIS_Daily_Snow.py
 
-2) duplicate_deletion.yml				--> # Daily at 15:10 UTC (17:10 local time)
+2) duplicate_deletion.yml				--> # Daily at 15:10 UTC (16:10 local time)
 	- 03_Delete_Duplicates.py
 
-3) aggregation_daily.yml				--> # Daily at 15:20 UTC (17:20 local time)
+3) aggregation_daily.yml				--> # Daily at 15:20 UTC (16:20 local time)
 	- 04_Aggregate_to_daily_data.py
 
-4) merge_all_daily_live_data.yml		--> # Daily at 15:30 UTC (17:30 local time)
+4) merge_all_daily_live_data.yml		--> # Daily at 15:30 UTC (16:30 local time)
 	- 05_Prepare_live_data_for_PCA.py
 
-5) k_means_clustering.yml				--> # Daily at 15:40 UTC (17:40 local time)
+5) k_means_clustering.yml				--> # Daily at 15:40 UTC (16:40 local time)
     - 06_K-Means_Clustering.py
