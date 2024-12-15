@@ -37,7 +37,7 @@ jobs:
         git config --global user.name 'github-actions'
         git config --global user.email 'github-actions@github.com'
         git add assets/API/daily/06_SLF_daily_imis_all_live_data.csv
-        git diff --quiet || git commit -m "Merged daily CSV files with all live data"
+        git commit -m "Merged daily CSV files with all live data"
         git push  
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
