@@ -3,16 +3,15 @@ import pandas as pd
 
 # URL mit Datum als Filterparameter
 url = 'https://measurement-api.slf.ch/public/api/imis/measurements'
-params = {'measure_date': '2024-12-17'}  # Query-Parameter
 
 # API-Request mit Filter
-response = requests.get(url, params=params)
+response = requests.get(url)
 
 # Überprüfung und Verarbeitung
 if response.status_code == 200:
     data = response.json()
     df_imis_d = pd.DataFrame(data)
-    df_imis_d.name = '04_SLF_daily_imis_measurements_17.12.24'
+    df_imis_d.name = '04_SLF_daily_imis_measurements'
     csv_file_path = f"./daily/{df_imis_d.name}.csv"
 
     # Daten an CSV-Datei anhängen
