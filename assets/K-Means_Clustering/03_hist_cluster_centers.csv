@@ -1,4 +1,4 @@
-acluster,character,risk,air_temp_mean_stations,wind_speed_max_stations,snow_height_mean_stations,new_snow_mean_stations,count,percentage,PCA1,PCA2
+cluster,character,risk,air_temp_mean_stations,wind_speed_max_stations,snow_height_mean_stations,new_snow_mean_stations,count,percentage,PCA1,PCA2
 0,extreme_wind,3 - moderate,-6.285643591167421,18.49483392827083,129.78317827130851,5.29066352758422,476,18.63013698630137,0.2075432818595524,1.2608999997331323
 1,extreme_wind_and_high_snow,4 - considerable,-4.693894034805795,10.408894581898466,243.5435446762975,5.236722316845473,445,17.416829745596868,0.3945189001894583,-0.9640389400399944
 2,low_wind_extreme_cold_air,2 - low,-10.16790828549601,8.609725156561481,122.30685158843053,5.5427821349143445,703,27.5146771037182,-0.07234834550791833,0.1299359408960706

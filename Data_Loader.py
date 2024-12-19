@@ -101,6 +101,13 @@ def load_pca_training():
 
 pca_training_df = load_pca_training()
 
+# 3.2) Load t-SNE Trainings-Data:
+def load_tsne_training():
+    tsne_training_df = pd.read_csv('assets/API/daily/08_tSNE_Trainings_Data.csv', sep=',', skiprows=0)
+    return tsne_training_df
+
+tsne_training_df = load_tsne_training()
+
 # 3.3) Load PCA Live-Data:
 def load_pca_live():
     pca_live_df = pd.read_csv('assets/API/daily/09_PCA_Live_Data.csv', sep=',', skiprows=0, quotechar='"')
@@ -109,10 +116,25 @@ def load_pca_live():
 
 pca_live_df = load_pca_live()
 
+# 3.3) Load t-SNE Live-Data:
+def load_tsne_live():
+    tsne_live_df = pd.read_csv('assets/API/daily/09_tSNE_Live_Data.csv', sep=',', skiprows=0, quotechar='"')
+    tsne_live_df['station_code'] = tsne_live_df['station_code'].str.strip()
+    return tsne_live_df
+
+tsne_live_df = load_tsne_live()
+
 # 3.4) Load K-Means Cluster Centers:
-def load_kmeans_centers():
-    kmeans_centers_df = pd.read_csv('assets/K-Means_Clustering/03_hist_cluster_centers.csv', sep=',', skiprows=0)
+def load_kmeans_centers_pca():
+    kmeans_centers_pca_df = pd.read_csv('assets/K-Means_Clustering/03_hist_cluster_centers.csv', sep=',', skiprows=0)
+    return kmeans_centers_pca_df
+
+kmeans_centers_df = load_kmeans_centers_pca()
+
+# 3.4) Load K-Means Cluster Centers t-SNE:
+def load_kmeans_centers_tsne():
+    kmeans_centers_df = pd.read_csv('assets/K-Means_Clustering/03_hist_cluster_centers_tSNE.csv', sep=',', skiprows=0)
     return kmeans_centers_df
 
-kmeans_centers_df = load_kmeans_centers()
+kmeans_centers_df = load_kmeans_centers_tsne()
 

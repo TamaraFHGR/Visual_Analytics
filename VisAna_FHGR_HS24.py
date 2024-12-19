@@ -7,7 +7,9 @@ import dash_bootstrap_components as dbc
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
 from Data_Loader import (load_imis_stations, load_hist_data, load_daily,
-                         load_kmeans_centers, load_pca_training, load_pca_live, load_kmeans_training)
+                         load_kmeans_centers_pca, load_kmeans_training,
+                         load_pca_training, load_pca_live,
+                         load_tsne_training, load_tsne_live)
 """
 -------------------------------------------------------------------------------------------------------------------
 -> Load Data:
@@ -15,9 +17,11 @@ from Data_Loader import (load_imis_stations, load_hist_data, load_daily,
 imis_df = load_imis_stations()
 acc_df = load_hist_data()
 daily_snow_df = load_daily()
-k_centers_df = load_kmeans_centers()
+k_centers_df = load_kmeans_centers_pca()
 pca_training_df = load_pca_training()
+tsne_training_df = load_tsne_training()
 pca_live_df = load_pca_live()
+tsne_live_df = load_tsne_live()
 kmeans_df = load_kmeans_training()
 """
 -------------------------------------------------------------------------------------------------------------------
@@ -863,7 +867,7 @@ def k_means_clusters(selected_date):
     else:
         filtered_pca_live = pca_live_df[pca_live_df['measure_date'] == pca_live_df['measure_date'].max()]
 
-    # Plot the K-Means clusters, based on PCA data:
+    # Plot the K-Means clusters::
     fig = go.Figure()
     for cluster in pca_training_df['k_cluster'].unique():
         pca_data = pca_training_df[pca_training_df['k_cluster'] == cluster]
@@ -1291,5 +1295,5 @@ def accidents_stats(selected_month, selected_risk_groups):
 
 
 if __name__ == '__main__':
-    #app.run_server(debug=True)
-    app.run_server(host="0.0.0.0", port=8080)
+    app.run_server(debug=True)
+    #app.run_server(host="0.0.0.0", port=8080)
