@@ -140,7 +140,7 @@ app.layout = html.Div([
                     dcc.Graph(id='live_geomap')
                 ], className='map_graph'),
                 html.Div([ # trend_graph
-                    html.H2('Snow and Weather Trend Analysis since 2020'),
+                    html.H2('Snow and Weather Trend Analysis since 2021'),
                     dcc.Graph(id='trend_analysis'),
                     html.Div(
                     dcc.Slider(
