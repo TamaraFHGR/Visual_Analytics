@@ -2,7 +2,7 @@ name: Run Aggregation to daily data
 
 on:
   schedule:
-    - cron: '20 15 * * *'  # Daily at 15:20 UTC (17:20 local time)
+    - cron: '20 15 * * *'  # Daily at 06:20 UTC (07:20 local time)
   workflow_dispatch:  # allow manual workflow run
 
 jobs:
