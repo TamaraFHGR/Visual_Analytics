@@ -1,8 +1,8 @@
 import pandas as pd
 
-live_measure_df = pd.read_csv('daily/04_SLF_daily_imis_measurements_daily.csv', sep=';', skiprows=0)
-live_snow_df = pd.read_csv('daily/05_SLF_daily_imis_snow_clean.csv', sep=';', skiprows=0)
-imis_df = pd.read_csv('daily/00_SLF_imis_stations.csv', sep=';', skiprows=0)
+live_measure_df = pd.read_csv('daily/04_SLF_daily_imis_measurements_daily.csv', sep=';', skiprows=0, dtype={'station_code': str})
+live_snow_df = pd.read_csv('daily/05_SLF_daily_imis_snow_clean.csv', sep=';', skiprows=0, dtype={'station_code': str})
+imis_df = pd.read_csv('daily/00_SLF_imis_stations.csv', sep=';', skiprows=0, dtype={'code': str})
 
 # Step 1: Reformat date and drop unnecessary columns:
 live_measure_df['measure_date'] = pd.to_datetime(live_measure_df['measure_date']).dt.date
