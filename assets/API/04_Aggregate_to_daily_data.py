@@ -1,7 +1,7 @@
 import pandas as pd
 
 # Read the CSV file
-df = pd.read_csv('daily/04_SLF_daily_imis_measurements_clean.csv', sep=';', skiprows=0)
+df = pd.read_csv('daily/04_SLF_daily_imis_measurements_clean.csv', sep=';', skiprows=0, low_memory=False)
 
 # Extract date from 'measure_date':
 df['date'] = df['measure_date'].str[:10]
