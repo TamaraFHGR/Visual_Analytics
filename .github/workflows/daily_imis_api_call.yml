@@ -2,7 +2,7 @@ name: Run API Data Collection with Python Scripts Daily
 
 on:
   schedule:
-    - cron: '0 09 * * *'  # Daily at 06:00 UTC (07:00 local time)
+    - cron: '0 06 * * *'  # Daily at 06:00 UTC (07:00 local time)
   workflow_dispatch:  # allow manual workflow run
 
 jobs:

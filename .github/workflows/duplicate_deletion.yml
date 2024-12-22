@@ -2,7 +2,7 @@ name: Run Duplicate Deletion
 
 on:
   schedule:
-    - cron: '10 09 * * *'  # Daily at 06:10 UTC (07:10 local time)
+    - cron: '10 06 * * *'  # Daily at 06:10 UTC (07:10 local time)
   workflow_dispatch:  # allow manual workflow run
 
 jobs:
