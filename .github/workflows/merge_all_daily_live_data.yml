@@ -2,7 +2,7 @@ name: Run Merge of all daily live data
 
 on:
   schedule:
-    - cron: '30 15 * * *'  # Daily at 06:30 UTC (07:30 local time)
+    - cron: '30 09 * * *'  # Daily at 06:30 UTC (07:30 local time)
   workflow_dispatch:  # allow manual workflow run
 
 jobs:
