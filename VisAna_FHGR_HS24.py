@@ -205,7 +205,7 @@ app.layout = html.Div([
                     html.H2('Avalanche Accidents since 1998-2023'),
                     dcc.Dropdown(
                             id='feature_dropdown',
-                            options=['Elevation','Snow Height','New Snow','Temperature','Wind'],
+                            options=['Caught Persons','Elevation','Snow Height','New Snow','Temperature','Wind'],
                             multi=False,
                             clearable=False,
                             value='Elevation'),], className='feature_dropdown'),
@@ -1148,6 +1148,11 @@ def imis_accident_map(selected_year, selected_feature):
         y_axis_label = 'Wind Speed  [m/s]'
         y_axis_values = heatmap_data.index
 
+    elif selected_feature == 'Caught Persons':
+        heatmap_data = filtered_df.groupby(['number_caught', 'month']).size().unstack(fill_value=0)
+        y_axis_label = 'Number of caught Persons per Accident'
+        y_axis_values = heatmap_data.index
+
     # Reindex to ensure all months are represented, even if no data is available
     heatmap_data = heatmap_data.reindex(columns=range(1, 13), fill_value=0)
 
@@ -1160,10 +1165,10 @@ def imis_accident_map(selected_year, selected_feature):
             colorscale='ice',
             reversescale=True,
             colorbar=dict(
-                title='# Accidents',
+                title='Number of Accidents',
                 titlefont=dict(
                     color='gray',
-                    size=8,
+                    size=10,
                     family='Arial, sans-serif'),
                 tickfont=dict(
                     color='gray',
@@ -1178,15 +1183,24 @@ def imis_accident_map(selected_year, selected_feature):
             ticktext=month_names),
         yaxis=dict(
             title=y_axis_label,
-            titlefont=dict(color='gray', size=8, family='Arial, sans-serif'),
+            titlefont=dict(color='gray', size=10, family='Arial, sans-serif'),
         ),
         margin=dict(l=0, r=0, t=0, b=0),
         template='plotly_white',
         height=280
     )
-    fig.update_yaxes(
-        tickfont=dict(color='gray', size=8, family='Arial, sans-serif')
-    )
+    # Update Y-Axis scale based on selected feature
+    if selected_feature == 'Caught Persons':
+        fig.update_yaxes(
+            range=[1, y_axis_values.max()],
+            tickfont=dict(color='gray', size=8, family='Arial, sans-serif'),
+            dtick=1
+        )
+    else:
+        fig.update_yaxes(
+            tickfont=dict(color='gray', size=8, family='Arial, sans-serif')
+        )
+
     fig.update_xaxes(
         tickfont=dict(color='gray', size=8, family='Arial, sans-serif')
     )
