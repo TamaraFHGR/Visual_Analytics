@@ -62,7 +62,7 @@ month_mapping = {
     6: 4  # April
 }
 
-last_update = datetime.fromtimestamp(os.path.getmtime('assets/API/daily/05_SLF_daily_imis_snow_clean.csv')).strftime('%Y-%m-%d-%H:%M')
+last_update = datetime.fromtimestamp(os.path.getmtime('assets/API/daily/05_SLF_daily_imis_snow.csv')).strftime('%Y-%m-%d-%H:%M')
 latest_date = pd.to_datetime(daily_snow_df['measure_date'].max())
 """
 -------------------------------------------------------------------------------------------------------------------
@@ -71,10 +71,6 @@ latest_date = pd.to_datetime(daily_snow_df['measure_date'].max())
 app = Dash(__name__, external_stylesheets=[dbc.themes.BOOTSTRAP, '/assets/custom_style.css'])
 
 app.layout = html.Div([
-    # Hidden Div for URL storage
-    dcc.Location(id='url', refresh=True),
-    html.Div(id='selected-url', style={'display': 'none'}),
-
     # State Storage for Active Button
     dcc.Store(id='active_button', data='default_button'),
 
@@ -137,10 +133,18 @@ app.layout = html.Div([
                     html.H2(['Snow and Weather Conditions on ',
                     html.Span(latest_date.strftime("%d-%b-%Y"),
                            style={'color': 'blue'})]),
-                    dcc.Graph(id='live_geomap')
+                    dcc.Graph(id='live_geomap'),
+                    # URL storage for Station Details:
+                    html.A([
+                        html.Img(src='/assets/details.png', style={'height': '16px', 'margin-right': '8px'}),  # Bild
+                        "View Station Details"  # Text
+                    ],
+                        id="station_link",
+                        target="_blank",
+                        style={'display': 'none'})
                 ], className='map_graph'),
                 html.Div([ # trend_graph
-                    html.H2('Snow and Weather Trend Analysis since 2021'),
+                    html.H2('Snow and Weather Trend Analysis since Winter 2020/21'),
                     dcc.Graph(id='trend_analysis'),
                     html.Div(
                     dcc.Slider(
@@ -319,7 +323,7 @@ def update_button_classes(active_button):
     Input('default_button', 'className')
 )
 def toggle_slider_visibility(default_button_class):
-    # Wenn der Default Button aktiv ist, wird der Slider ausgeblendet, d.h. wenn die className = 'active' ist:
+    # Only if default button is active, show the slider
     if default_button_class == 'active':
         return {'display': 'none'}
     return {}
@@ -327,17 +331,32 @@ def toggle_slider_visibility(default_button_class):
 
 # Callback to open the station document in a new tab:
 @app.callback(
-    Output('url', 'href'),
-    [Input('live_geomap', 'clickData')]
+    [Output('station_link', 'href'),
+     Output('station_link', 'children'),
+     Output('station_link', 'style')],
+    [Input('live_geomap', 'clickData'),
+     Input('active_button', 'data')]
 )
-def open_station_document(clickData):
-    if clickData:
-        # Extract URL from the click data
-        url = clickData['points'][0]['customdata']
-        return url
-    return no_update
+def update_station_link(click_data, active_button):
+    # Check if any station was clicked:
+    if click_data is None:
+        # Do not show the link if no station was clicked:
+        return "#", ["Station Details"], {'display': 'none'}
 
-"""
+    # Extract URL und Station Code from the click data:
+    url = click_data['points'][0]['customdata']
+    station_code = click_data['points'][0]['text']
+
+    # Only show the link if the default button is active:
+    if active_button == 'default_button':
+        link_style = {'display': 'block'}
+    else:
+        link_style = {'display': 'none'}
+
+    return url, [html.Img(src='/assets/details.png', style={'height': '16px', 'margin-right': '8px'}),
+             f"View Station Details for: {station_code}"], link_style
+
+""""
 -----------------------------------------------------------------------------------------
 Section 1.1: left column - Map Visualization
 """
@@ -351,7 +370,9 @@ Section 1.1: left column - Map Visualization
 def imis_live_map(active_button, selected_region, selected_canton, selected_stations):
     filtered_data = imis_df.copy()
     # URL for the IMIS station Details:
-    filtered_data['data_url'] = filtered_data['code'].apply(lambda code: f"https://stationdocu.slf.ch/pdf/IMIS_{code}_DE.pdf")
+    filtered_data['customdata'] = filtered_data['code'].apply(
+        lambda code: f"https://stationdocu.slf.ch/pdf/IMIS_{code}_DE.pdf"
+    )
 
     # a) Filter data based on selected region:
     if selected_region and selected_region != 'Entire Alpine Region':
@@ -378,14 +399,14 @@ def imis_live_map(active_button, selected_region, selected_canton, selected_stat
                 color='black'),
             text=filtered_data['combined'],
             hoverinfo='text',
-            customdata=filtered_data['data_url'])
+            customdata=filtered_data['customdata'])
         )
         fig.update_layout(
             map_style="light",
             map_zoom=5.5,
             map_center={"lat": filtered_data['lat'].mean(), "lon": filtered_data['lon'].mean()},
             margin={"r": 0, "t": 0, "l": 0, "b": 0},
-            height=200
+            height=180
         )
 
     # Plot Heat Map "Temperature":
@@ -570,6 +591,7 @@ def weather_trend(active_button, selected_region, selected_canton, selected_stat
                 barmode='stack',
                 legend=dict(
                     font=dict(color='gray', size=8, family='Arial, sans-serif'),
+                    y=0.9,
                     bgcolor='rgba(0, 0, 0, 0)'),
                 showlegend=True,
             )
@@ -1323,5 +1345,5 @@ def accidents_stats(selected_month, selected_risk_groups):
 
 
 if __name__ == '__main__':
-    #app.run_server(debug=True)
-    app.run_server(host="0.0.0.0", port=8080)
+    app.run_server(debug=True)
+    #app.run_server(host="0.0.0.0", port=8080)

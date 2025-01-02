@@ -53,7 +53,7 @@ def load_measurements():
 # 2.2) Load daily IMIS snow data (updated once a day):
 # New data collected every day at 16:00 UTC with '02_API_Load_IMIS_Daily_Snow'
 def load_snow():
-    snow_df = pd.read_csv('assets/API/daily/05_SLF_daily_imis_snow_clean.csv', sep=';',skiprows=0)
+    snow_df = pd.read_csv('assets/API/daily/05_SLF_daily_imis_snow.csv', sep=';',skiprows=0)
     # Extract only relevant columns:
     snow_df = snow_df[[
         'station_code', 'measure_date', 'HS', 'HN_1D'

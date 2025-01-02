@@ -16,5 +16,5 @@ measure_df.index = measure_df.index + 1
 snow_df.index = snow_df.index + 1
 
 # Save the cleaned data to a new CSV file:
-measure_df.to_csv('daily/04_SLF_daily_imis_measurements_clean.csv', sep=';', index=False)
-snow_df.to_csv('daily/05_SLF_daily_imis_snow_clean.csv', sep=';', index=False)
+measure_df.to_csv('daily/04_SLF_daily_imis_measurements.csv', sep=';', index=False)
+snow_df.to_csv('daily/05_SLF_daily_imis_snow.csv', sep=';', index=False)

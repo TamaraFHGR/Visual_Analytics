@@ -362,3 +362,12 @@ p {
     font-weight: normal;
     margin: 6px 0 1px;
 }
+/*-----------------------------------*/
+/* Link Styles */
+#station_link {
+    color: blue;
+    font-size: 12px;
+    font-weight: bold;
+    font-family: var(--font-primary);
+}
+
