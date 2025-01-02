@@ -180,7 +180,7 @@ app.layout = html.Div([
                         min=0,
                         max=6,
                         step=None,
-                        value=2,
+                        value=3,
                         marks={0: 'Oct 24',
                                1: 'Nov 24',
                                2: 'Dec 24',
@@ -889,7 +889,10 @@ def k_means_clusters(selected_date):
             mode='markers',
             marker=dict(size=4, color='black', opacity=0.7),
             name='Live Data',
-            showlegend=False)
+            showlegend=False,
+            hovertext=filtered_pca_live['canton_code']
+                      + ' - ' + filtered_pca_live['station_code']
+                      + ' - ' + filtered_pca_live['station_name'])
         )
 
         # Add the cluster centers from k_centers_df
@@ -955,7 +958,7 @@ def cluster_matrix(selected_region, selected_canton, selected_month_idx):
         filtered_data['measure_date'] = pd.to_datetime(filtered_data['measure_date'], errors='coerce')
 
     # Filter for the year 2024
-    filtered_data = filtered_data[filtered_data['measure_date'].dt.year == 2024]
+    filtered_data = filtered_data[filtered_data['measure_date'].dt.year.isin([2024, 2025])]
 
     # Handle future slider values not as error:
     if selected_month_idx is not None:
@@ -1156,6 +1159,10 @@ def imis_accident_map(selected_year, selected_feature):
     # Reindex to ensure all months are represented, even if no data is available
     heatmap_data = heatmap_data.reindex(columns=range(1, 13), fill_value=0)
 
+    # Convert the data to string for display in the heatmap
+    text_data = heatmap_data.values.astype(str)
+    text_data[heatmap_data.values == 0] = ""
+
     # Create the Heatmap figure
     fig = go.Figure(
         go.Heatmap(
@@ -1164,6 +1171,13 @@ def imis_accident_map(selected_year, selected_feature):
             y=y_axis_values,        # Elevation or Snow Height
             colorscale='ice',
             reversescale=True,
+            # text=text_data,  # Add the z-values as text
+            # texttemplate="%{text}",  # Display the z-values
+            # textfont=dict(
+            #     #',  # Set the text color
+            #     size=6,  # Set the text size
+            #     family='Arial, sans-serif'
+            # ),
             colorbar=dict(
                 title='Number of Accidents',
                 titlefont=dict(
@@ -1225,7 +1239,7 @@ def accidents_stats(selected_month, selected_risk_groups):
     filtered_df['year'] = filtered_df['date'].dt.year
 
     # Filter by selected month, if any:
-    if selected_month:
+    if selected_month is not None:
         filtered_df = filtered_df[filtered_df['month'] == selected_month]
 
     if selected_risk_groups:
@@ -1309,5 +1323,5 @@ def accidents_stats(selected_month, selected_risk_groups):
 
 
 if __name__ == '__main__':
-    #app.run_server(debug=True)
-    app.run_server(host="0.0.0.0", port=8080)
+    app.run_server(debug=True)
+    #app.run_server(host="0.0.0.0", port=8080)
