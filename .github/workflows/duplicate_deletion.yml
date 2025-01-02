@@ -36,9 +36,9 @@ jobs:
       run: |
         git config --global user.name 'github-actions'
         git config --global user.email 'github-actions@github.com'
-        git add assets/API/daily/04_SLF_daily_imis_measurements_clean.csv
-        git add assets/API/daily/05_SLF_daily_imis_snow_clean.csv
-        git commit -m "Duplicate Deletion"
+        git add assets/API/daily/04_SLF_daily_imis_measurements.csv
+        git add assets/API/daily/05_SLF_daily_imis_snow.csv
+        git commit -m "2: Duplicate Deletion"
         git push
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
