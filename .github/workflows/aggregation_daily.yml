@@ -37,7 +37,7 @@ jobs:
         git config --global user.name 'github-actions'
         git config --global user.email 'github-actions@github.com'
         git add assets/API/daily/04_SLF_daily_imis_measurements_daily.csv
-        git commit -m "Daily aggregated measurements"
+        git commit -m "3: Daily aggregated measurements"
         git push  
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
