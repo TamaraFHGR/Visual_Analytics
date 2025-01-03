@@ -1,5 +1,5 @@
 // Set maximum number of snowflakes:
-const maxSnowflakes = 15;
+const maxSnowflakes = 100;
 
 // Function to create a snowflake:
 function createSnowflakes() {
