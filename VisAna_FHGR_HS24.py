@@ -860,6 +860,7 @@ def weather_trend(active_button, selected_region, selected_canton, selected_stat
                 x=0.5),
             showlegend=True,
         )
+
         fig.update_xaxes(
             autorange=True,
             showgrid=True,
