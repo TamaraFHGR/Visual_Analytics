@@ -1,5 +1,8 @@
 import requests
 import pandas as pd
+import time
+
+start_time = time.time()
 
 # URL and API-request:
 url = 'https://measurement-api.slf.ch/public/api/imis/daily-snow'
@@ -18,3 +21,7 @@ if response.status_code == 200:
     print(df_imis_d.head())
 else:
     print(f"Error during request: {response.status_code}")
+
+end_time = time.time()
+time = end_time - start_time
+print(f'Time: {time} seconds')     # Time: 0.5381348133087158 seconds

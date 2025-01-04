@@ -3,7 +3,9 @@ from sklearn.preprocessing import StandardScaler
 from sklearn.cluster import KMeans
 from sklearn.decomposition import PCA
 import os
+import time
 
+start_time = time.time()
 os.environ["LOKY_MAX_CPU_COUNT"] = "4"
 
 acc_df = pd.read_csv('daily/07_K-Means_Trainings_Data.csv', sep=',', skiprows=0)
@@ -62,3 +64,7 @@ live_data_pca_df = pd.concat([live_data_pca_df, live_df_cleaned[additional_colum
 # Save the data:
 data_pca_df.to_csv('daily/08_PCA_Trainings_Data.csv', index=False)
 live_data_pca_df.to_csv('daily/09_PCA_Live_Data.csv', index=False)
+
+end_time = time.time()
+time = end_time - start_time
+print(f'Time: {time} seconds')      # Time: 1.0918083190917969 seconds

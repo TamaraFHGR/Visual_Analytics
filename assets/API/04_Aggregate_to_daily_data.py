@@ -1,4 +1,7 @@
 import pandas as pd
+import time
+
+start_time = time.time()
 
 # Read the CSV file
 df = pd.read_csv('daily/04_SLF_daily_imis_measurements.csv', sep=';', skiprows=0, low_memory=False)
@@ -31,3 +34,7 @@ df.to_csv('daily/04_SLF_daily_imis_measurements_daily.csv', sep=';', index=False
 
 # Optional: display the DataFrame to verify the new column
 print(df.head())
+
+end_time = time.time()
+time = end_time - start_time
+print(f'Time: {time} seconds')     # Time: 3.140749454498291 seconds

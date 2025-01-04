@@ -1,4 +1,7 @@
 import pandas as pd
+import time
+
+start_time = time.time()
 
 measure_df = pd.read_csv('daily/04_SLF_daily_imis_measurements.csv', sep=';',skiprows=0)
 snow_df = pd.read_csv('daily/05_SLF_daily_imis_snow.csv', sep=';',skiprows=0)
@@ -18,3 +21,7 @@ snow_df.index = snow_df.index + 1
 # Save the cleaned data to a new CSV file:
 measure_df.to_csv('daily/04_SLF_daily_imis_measurements.csv', sep=';', index=False)
 snow_df.to_csv('daily/05_SLF_daily_imis_snow.csv', sep=';', index=False)
+
+end_time = time.time()
+time = end_time - start_time
+print(f'Time: {time} seconds')     # Time: 4.3200010776519775 seconds

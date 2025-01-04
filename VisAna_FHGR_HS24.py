@@ -1,6 +1,7 @@
 from dash import Dash, dcc, html, Input, Output, State, callback_context, no_update
 import os
 from datetime import datetime, date, timedelta
+import time
 import pandas as pd
 import numpy as np
 import dash_bootstrap_components as dbc
@@ -8,8 +9,10 @@ import plotly.graph_objects as go
 from plotly.subplots import make_subplots
 from Data_Loader import (load_imis_stations, load_hist_data, load_daily,
                          load_kmeans_centers_pca, load_kmeans_training,
-                         load_pca_training, load_pca_live,
-                         load_tsne_training, load_tsne_live)
+                         load_pca_training, load_pca_live)
+
+start_time_appload = time.time()
+
 """
 -------------------------------------------------------------------------------------------------------------------
 -> Load Data:
@@ -19,9 +22,7 @@ acc_df = load_hist_data()
 daily_snow_df = load_daily()
 k_centers_df = load_kmeans_centers_pca()
 pca_training_df = load_pca_training()
-tsne_training_df = load_tsne_training()
 pca_live_df = load_pca_live()
-tsne_live_df = load_tsne_live()
 kmeans_df = load_kmeans_training()
 """
 -------------------------------------------------------------------------------------------------------------------
@@ -1344,6 +1345,12 @@ def accidents_stats(selected_month, selected_risk_groups):
 
     return fig
 
+"""
+-----------------------------------------------------------------------------------------
+Section 4: Performance Test
+"""
+end_time_appload = time.time()
+print(f"The loading time of the Dash-app takes {end_time_appload - start_time_appload:.4f} seconds.") # 0.99 seconds
 
 if __name__ == '__main__':
     #app.run_server(debug=True)

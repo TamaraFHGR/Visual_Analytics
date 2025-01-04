@@ -1,4 +1,7 @@
 import pandas as pd
+import time
+
+start_time = time.time()
 
 live_measure_df = pd.read_csv('daily/04_SLF_daily_imis_measurements_daily.csv', sep=';', skiprows=0, dtype={'station_code': str})
 live_snow_df = pd.read_csv('daily/05_SLF_daily_imis_snow.csv', sep=';', skiprows=0, dtype={'station_code': str})
@@ -79,3 +82,6 @@ live_df = live_df[live_df['alpine_region'] != 'NONE']
 # Step 8: Save the data:
 live_df.to_csv('daily/06_SLF_daily_imis_all_live_data.csv', sep=';', index=False)
 
+end_time = time.time()
+time = end_time - start_time
+print(f'Time: {time} seconds')     # Time: 3.3070733547210693 seconds
