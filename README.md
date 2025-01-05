@@ -1,39 +1,35 @@
+*************
 Data Description:
-----------------
+*************
+- imis_df = load_imis_stations()
+	- 	assets/API/daily/00_SLF_imis_stations.csv
+ 	- 	used in 1.1 imis_live_map
+ 
+ - daily_snow_df = load_daily()
+   	- 	assets/API/daily/06_SLF_daily_imis_all_live_data.csv
+   	- 	used in 1.1 imis_live_map and 1.2 weather_trend
 
-imis_df = load_imis_stations()			--> 1.1						assets/API/daily/00_SLF_imis_stations.csv
-daily_snow_df = load_daily()			--> 1.1 & 1.2				assets/API/daily/06_SLF_daily_imis_all_live_data.csv
+- k_centers_df = load_kmeans_centers()
+	- 	assets/K-Means_Clustering/03_hist_cluster_centers.csv
+ 	- 	used in 2.1 k_means_cluster
 
-k_centers_df = load_kmeans_centers()	--> 2.1						assets/K-Means_Clustering/03_hist_cluster_centers.csv
-pca_training_df = load_pca_training()	--> 2.1						assets/K-Means_Clustering/02_hist_pca_data.csv
-pca_live_df = load_pca_live()			--> 2.1 & 2.2				assets/API/daily/09_PCA_Live_Data.csv
+- pca_training_df = load_pca_training()
+	-	assets/K-Means_Clustering/02_hist_pca_data.csv
+ 	-	used in 2.1 k_means_cluster
 
-acc_df = load_hist_data()				--> 3.1						assets/API/daily/01_SLF_hist_statistical_avalanche_data.csv
-kmeans_df = load_kmeans_training()		--> 3.2						assets/K-Means_Clustering/01_hist_input_data_k-clustered.csv
+- pca_live_df = load_pca_live()
+	- 	assets/API/daily/09_PCA_Live_Data.csv
+ 	- 	used in 2.1 k_means_cluster and 2.2 cluster_matrix		
 
-----------------------------------------------------------------
-1.1 imis_live_map
-	- filtered_data = imis_df.copy()
-	- daily_snow_df --> daily_snow_df['measure_date'].max()]
+- acc_df = load_hist_data()
+	- 	assets/API/daily/01_SLF_hist_statistical_avalanche_data.csv
+	- 	used in 3.1 imis_acc_map
+  
+- kmeans_df = load_kmeans_training()
+	- 	assets/K-Means_Clustering/01_hist_input_data_k-clustered.csv$
+ 	- 	used in 3.2 accident_stats
 
-1.2 weather_trend
-	- filtered_data = daily_snow_df.copy()
-----------------------------------------------------------------
-2.1 k_means_cluster
-	- pca_live_df
-	- pca_training_df
-	- k_centers_df
-
-2.2 cluster_matrix
-	- filtered_data = pca_live_df.copy()
-----------------------------------------------------------------
-3.1 imis_acc_map
-	- filtered_df = acc_df.copy()
-
-3.2 accident_stats
-	- filtered_df = kmeans_df.copy()
-----------------------------------------------------------------
-
+*************
 Git Workflow:
 *************
 1) daily_imis_api_call.yml				--> # Daily at 06:00 UTC (07:00 local time)
@@ -51,7 +47,5 @@ Git Workflow:
 
 5) k_means_clustering.yml				--> # Daily at 06:40 UTC (07:40 local time)
     - 06_K-Means_Clustering.py
-	
-----------------------------------------------------------------
 
 	
