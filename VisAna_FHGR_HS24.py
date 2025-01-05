@@ -248,7 +248,7 @@ app.layout = html.Div([
                     [dcc.Checklist(
                         id='risk_group_checklist',
                         options=[{'label': group, 'value': group} for group in sorted(kmeans_df['risk_group'].unique())],
-                        value=['1 - very low', '2 - low', '4 - considerable'],
+                        value=['1 - very low', '4 - considerable'],
                         inline=True)
                     ], className='risk_group_checklist')
                 ], className='training_data'),
